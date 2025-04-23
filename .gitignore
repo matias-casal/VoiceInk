@@ -100,4 +100,5 @@ Temporary Items
 .apdisk
 
 # Xcode generated folders
-DerivedData/ 
+DerivedData/
+/VoiceInk.app/
