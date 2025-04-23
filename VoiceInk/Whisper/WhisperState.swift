@@ -312,11 +312,11 @@ class WhisperState: NSObject, ObservableObject, AVAudioRecorderDelegate {
                 modelContext.insert(newTranscription)
                 try? modelContext.save()
             }
-            if case .trialExpired = licenseViewModel.licenseState {
-                text = """
-                    Your trial has expired. Upgrade to VoiceInk Pro at tryvoiceink.com/buy
-                    \n\(text)
-                    """
+            // Check license status before proceeding
+            guard licenseViewModel.canUseApp else {
+                logger.warning("Transcription blocked: No valid license.")
+                currentError = .transcriptionFailed
+                return
             }
             SoundManager.shared.playStopSound()
             if AXIsProcessTrusted() {
