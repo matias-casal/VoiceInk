@@ -34,9 +34,10 @@ Esta aproximación mantiene un historial limpio y lineal.
 
 ## Roadmap
 
-- [ ] Añadir los cambios (`VoiceInk/HotkeyManager.swift` y el directorio `.cursor/`) al staging area (`git add`).
-- [ ] Crear un nuevo commit con los cambios locales (`git commit`).
-- [ ] Obtener los cambios más recientes de `origin` (`git fetch origin`).
+- [x] ~~Añadir `.cursor/` al archivo `.gitignore`.~~ (Se omite este paso por petición del usuario para incluir `.cursor/` en el commit)
+- [x] Añadir los cambios (`VoiceInk/HotkeyManager.swift` y el directorio `.cursor/`) al staging area (`git add`).
+- [x] Crear un nuevo commit con los cambios locales (`git commit`).
+- [x] Obtener los cambios más recientes de `origin` (`git fetch origin`).
 - [ ] Iniciar el rebase interactivo de la rama `main` local sobre `origin/main` (`git rebase origin/main`).
 - [ ] **(Si ocurre)** Resolver conflictos durante el rebase (priorizando la versión 1.26 y manteniendo cambios funcionales locales). Continuar el rebase (`git rebase --continue`).
 - [ ] Verificar el estado final: comprobar que `git status` está limpio, que la versión en `project.pbxproj` es `1.26` y que los cambios locales se mantienen (incluyendo `.cursor/`).
