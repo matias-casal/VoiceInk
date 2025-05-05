@@ -17,7 +17,7 @@ class AudioTranscriptionManager: ObservableObject {
     private var currentTask: Task<Void, Error>?
     private var whisperContext: WhisperContext?
     private let audioProcessor = AudioProcessor()
-    private let logger = Logger(subsystem: "com.prakashjoshipax.voiceink", category: "AudioTranscriptionManager")
+    private let logger = Logger(subsystem: "com.bootweb.VoiceInk", category: "AudioTranscriptionManager")
     
     enum ProcessingPhase {
         case idle
@@ -75,7 +75,7 @@ class AudioTranscriptionManager: ObservableObject {
                 
                 // Create permanent copy of the audio file
                 let recordingsDirectory = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-                    .appendingPathComponent("com.prakashjoshipax.VoiceInk")
+                    .appendingPathComponent("com.bootweb.VoiceInk")
                     .appendingPathComponent("Recordings")
                 
                 let fileName = "transcribed_\(UUID().uuidString).wav"

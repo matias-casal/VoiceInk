@@ -16,7 +16,7 @@ actor WhisperContext {
     private var languageCString: [CChar]?
     private var prompt: String?
     private var promptCString: [CChar]?
-    private let logger = Logger(subsystem: "com.prakashjoshipax.voiceink", category: "WhisperContext")
+    private let logger = Logger(subsystem: "com.bootweb.VoiceInk", category: "WhisperContext")
 
     private init() {
         // Private initializer without context

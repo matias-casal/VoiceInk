@@ -7,7 +7,7 @@ import os
 class Recorder: ObservableObject {
     private var engine: AVAudioEngine?
     private var file: AVAudioFile?
-    private let logger = Logger(subsystem: "com.prakashjoshipax.voiceink", category: "Recorder")
+    private let logger = Logger(subsystem: "com.bootweb.VoiceInk", category: "Recorder")
     private let deviceManager = AudioDeviceManager.shared
     private var deviceObserver: NSObjectProtocol?
     private var isReconfiguring = false

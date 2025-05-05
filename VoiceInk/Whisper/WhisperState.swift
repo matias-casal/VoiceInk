@@ -73,7 +73,7 @@ class WhisperState: NSObject, ObservableObject, AVAudioRecorderDelegate {
     let recordingsDirectory: URL
     let enhancementService: AIEnhancementService?
     var licenseViewModel: LicenseViewModel
-    let logger = Logger(subsystem: "com.prakashjoshipax.voiceink", category: "WhisperState")
+    let logger = Logger(subsystem: "com.bootweb.VoiceInk", category: "WhisperState")
     var notchWindowManager: NotchWindowManager?
     var miniWindowManager: MiniWindowManager?
     
@@ -83,10 +83,10 @@ class WhisperState: NSObject, ObservableObject, AVAudioRecorderDelegate {
     init(modelContext: ModelContext, enhancementService: AIEnhancementService? = nil) {
         self.modelContext = modelContext
         self.modelsDirectory = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("com.prakashjoshipax.VoiceInk")
+            .appendingPathComponent("com.bootweb.VoiceInk")
             .appendingPathComponent("WhisperModels")
         self.recordingsDirectory = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("com.prakashjoshipax.VoiceInk")
+            .appendingPathComponent("com.bootweb.VoiceInk")
             .appendingPathComponent("Recordings")
         self.enhancementService = enhancementService
         self.licenseViewModel = LicenseViewModel()

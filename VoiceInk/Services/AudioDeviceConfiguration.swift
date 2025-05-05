@@ -4,7 +4,7 @@ import CoreAudio
 import os
 
 class AudioDeviceConfiguration {
-    private static let logger = Logger(subsystem: "com.prakashjoshipax.voiceink", category: "AudioDeviceConfiguration")
+    private static let logger = Logger(subsystem: "com.bootweb.VoiceInk", category: "AudioDeviceConfiguration")
     
     /// Configures audio session for a specific device
     /// - Parameter deviceID: The ID of the audio device to configure

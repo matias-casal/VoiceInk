@@ -106,7 +106,7 @@ enum AIProvider: String, CaseIterable {
 }
 
 class AIService: ObservableObject {
-    private let logger = Logger(subsystem: "com.prakashjoshipax.voiceink", category: "AIService")
+    private let logger = Logger(subsystem: "com.bootweb.VoiceInk", category: "AIService")
     
     @Published var apiKey: String = ""
     @Published var isAPIKeyValid: Bool = false
