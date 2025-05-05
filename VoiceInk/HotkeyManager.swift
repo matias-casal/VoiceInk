@@ -17,6 +17,8 @@ extension KeyboardShortcuts.Name {
     static let selectPrompt7 = Self("selectPrompt7")
     static let selectPrompt8 = Self("selectPrompt8")
     static let selectPrompt9 = Self("selectPrompt9")
+    // F5 Dictation Toggle
+    static let f5DictationToggle = Self("f5DictationToggle")
 }
 
 @MainActor
@@ -99,6 +101,15 @@ class HotkeyManager: ObservableObject {
         updateShortcutStatus()
         setupEnhancementShortcut()
         setupVisibilityObserver()
+
+        // Setup F5 Dictation Toggle
+        KeyboardShortcuts.setShortcut(.init(.f5), for: .f5DictationToggle)
+        KeyboardShortcuts.onKeyDown(for: .f5DictationToggle) { [weak self] in
+            Task { @MainActor in
+                // Direct call to toggle recorder action
+                await self?.whisperState.handleToggleMiniRecorder()
+            }
+        }
     }
     
     private func resetKeyStates() {
@@ -376,6 +387,8 @@ class HotkeyManager: ObservableObject {
             removeKeyMonitor()
             removeEscapeShortcut()
             removeEnhancementShortcut()
+            // Unset the F5 shortcut
+            KeyboardShortcuts.setShortcut(nil, for: .f5DictationToggle)
         }
     }
 }
