@@ -2,6 +2,7 @@ import Foundation
 import KeyboardShortcuts
 import Carbon
 import AppKit
+import CoreGraphics
 
 extension KeyboardShortcuts.Name {
     static let toggleMiniRecorder = Self("toggleMiniRecorder")
@@ -17,8 +18,6 @@ extension KeyboardShortcuts.Name {
     static let selectPrompt7 = Self("selectPrompt7")
     static let selectPrompt8 = Self("selectPrompt8")
     static let selectPrompt9 = Self("selectPrompt9")
-    // F5 Dictation Toggle
-    static let f5DictationToggle = Self("f5DictationToggle")
 }
 
 @MainActor
@@ -46,6 +45,7 @@ class HotkeyManager: ObservableObject {
     // Change from single monitor to separate local and global monitors
     private var globalEventMonitor: Any?
     private var localEventMonitor: Any?
+    private var f5KeyDownMonitor: Any? // Monitor for F5 key press
     
     // Key handling properties
     private var keyPressStartTime: Date?
@@ -59,6 +59,11 @@ class HotkeyManager: ObservableObject {
     private var fnDebounceTask: Task<Void, Never>?
     private var pendingFnKeyState: Bool? = nil
     
+    // Para el event tap de la tecla de micrófono/F5
+    private var mediaKeyEventTap: CFMachPort?
+    private var mediaKeyRunLoopSource: CFRunLoopSource?
+    @Published var keyCodeForAlert: Int? = nil // Para mostrar el keyCode en un Alert
+
     enum PushToTalkKey: String, CaseIterable {
         case rightOption = "rightOption"
         case leftOption = "leftOption"
@@ -101,15 +106,7 @@ class HotkeyManager: ObservableObject {
         updateShortcutStatus()
         setupEnhancementShortcut()
         setupVisibilityObserver()
-
-        // Setup F5 Dictation Toggle
-        KeyboardShortcuts.setShortcut(.init(.f5), for: .f5DictationToggle)
-        KeyboardShortcuts.onKeyDown(for: .f5DictationToggle) { [weak self] in
-            Task { @MainActor in
-                // Direct call to toggle recorder action
-                await self?.whisperState.handleToggleMiniRecorder()
-            }
-        }
+        setupF5Monitor()
     }
     
     private func resetKeyStates() {
@@ -387,8 +384,124 @@ class HotkeyManager: ObservableObject {
             removeKeyMonitor()
             removeEscapeShortcut()
             removeEnhancementShortcut()
-            // Unset the F5 shortcut
-            KeyboardShortcuts.setShortcut(nil, for: .f5DictationToggle)
+            removeF5Monitor()
         }
     }
+    
+    // MARK: - F5 Key Monitor / Microphone Key Event Tap
+
+    // La función callback ahora es global (globalMediaKeyTapCallback)
+
+    private func setupF5Monitor() {
+        let options: NSDictionary = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true]
+        let accessEnabled = AXIsProcessTrustedWithOptions(options)
+
+        if !accessEnabled {
+            print("AVISO: Permisos de accesibilidad no concedidos. El tap para la tecla F5/Micrófono podría no funcionar o no suprimir eventos.")
+        }
+
+        removeF5Monitor()
+
+        // Escuchamos eventos .keyDown. Las teclas multimedia especiales se envían como eventos keyDown
+        // con keyCodes específicos.
+        let eventMask = (1 << CGEventType.keyDown.rawValue)
+        
+        let unsafeSelf = Unmanaged.passUnretained(self).toOpaque()
+
+        mediaKeyEventTap = CGEvent.tapCreate(
+            tap: .cgSessionEventTap, 
+            place: .headInsertEventTap,
+            options: .defaultTap, 
+            eventsOfInterest: CGEventMask(eventMask),
+            callback: globalMediaKeyTapCallback, // Usamos la función global
+            userInfo: unsafeSelf
+        )
+
+        if let tap = mediaKeyEventTap {
+            mediaKeyRunLoopSource = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, tap, 0)
+            if let source = mediaKeyRunLoopSource {
+                CFRunLoopAddSource(CFRunLoopGetCurrent(), source, .commonModes)
+                CGEvent.tapEnable(tap: tap, enable: true)
+                print("CGEventTap para teclas (F5/Micrófono) configurado para keyDown.")
+            } else {
+                print("Error: No se pudo crear CFRunLoopSource para el mediaKeyEventTap.")
+                mediaKeyEventTap = nil 
+            }
+        } else {
+            print("Error: No se pudo crear el CGEventTap para teclas.")
+        }
+    }
+
+    private func removeF5Monitor() {
+        if let tap = mediaKeyEventTap {
+            CGEvent.tapEnable(tap: tap, enable: false)
+            // La documentación sugiere que CFMachPortInvalidate y CFRunLoopRemoveSource
+            // deben hacerse, pero a veces pueden causar problemas si no se manejan
+            // con cuidado con el ciclo de vida del run loop.
+            // Por ahora, solo deshabilitamos. Si hay problemas de recursos, revisaremos esto.
+            // CFRunLoopRemoveSource(CFRunLoopGetCurrent(), mediaKeyRunLoopSource, .commonModes)
+            // CFMachPortInvalidate(tap) // Esto liberaría el tap.
+            mediaKeyRunLoopSource = nil
+            mediaKeyEventTap = nil
+            print("CGEventTap para teclas multimedia (F5/Micrófono) deshabilitado y removido (referencias).")
+        }
+    }
+    
+    // MARK: - Push-to-Talk Key Monitor
+
 }
+
+// --- INICIO DE LA FUNCIÓN GLOBAL ---
+// Definimos la función callback a nivel global, FUERA de cualquier clase.
+func globalMediaKeyTapCallback(proxy: CGEventTapProxy, type: CGEventType, event: CGEvent, refcon: UnsafeMutableRawPointer?) -> Unmanaged<CGEvent>? {
+    guard let manager = refcon?.assumingMemoryBound(to: HotkeyManager.self).pointee else {
+        // Si no podemos obtener la instancia del manager debido a un problema con refcon,
+        // es más seguro pasar el evento sin modificar.
+        return Unmanaged.passUnretained(event)
+    }
+
+    if type == .keyDown {
+        let cgKeyCode = event.getIntegerValueField(.keyboardEventKeycode)
+        
+        // Intentamos convertir CGEvent a NSEvent para obtener el subtipo si está disponible.
+        if let nsEvent = NSEvent(cgEvent: event) {
+            // Comprobamos si es el subtipo de las teclas de control auxiliares (multimedia).
+            if nsEvent.subtype.rawValue == 8 { // NX_SUBTYPE_AUX_CONTROL_BUTTONS
+                print("CGEventTap - AUX_CONTROL_BUTTON KeyDown: cgKeyCode \\(cgKeyCode)")
+
+                // Actualizamos la propiedad en el hilo principal para mostrar el Alert en la UI.
+                DispatchQueue.main.async {
+                    manager.keyCodeForAlert = Int(cgKeyCode)
+                }
+
+                // ----- INICIO DE LA LÓGICA DE ACCIÓN (cuando conozcamos el código) -----
+                // UNA VEZ QUE CONOZCAS EL cgKeyCode DE TU TECLA DE MICRÓFONO, REEMPLAZA XX_KEY_CODE_XX
+                // let IDENTIFIED_DICTATION_KEY_CODE: Int64 = XX_KEY_CODE_XX 
+                // if cgKeyCode == IDENTIFIED_DICTATION_KEY_CODE {
+                //     Task { @MainActor in
+                //         // Asegúrate de que manager.whisperState esté disponible y sea seguro de usar.
+                //         await manager.whisperState.handleToggleMiniRecorder()
+                //     }
+                //     // Devolvemos nil para SUPRIMIR el evento original.
+                //     // ESTO REQUIERE PERMISOS DE ACCESIBILIDAD.
+                //     return nil
+                // }
+                // ----- FIN DE LA LÓGICA DE ACCIÓN -----
+            } else {
+                // Opcional: manejar o imprimir otros eventos keyDown si es necesario para depuración.
+                // print("CGEventTap - Non-AUX KeyDown: cgKeyCode \\(cgKeyCode)")
+            }
+        } else {
+             // Si la conversión a NSEvent falla, al menos tenemos el cgKeyCode.
+             // Esto podría ser suficiente para identificar la tecla si el subtipo no es crucial.
+             print("CGEventTap - KeyDown (NSEvent conversion failed): cgKeyCode \\(cgKeyCode)")
+             DispatchQueue.main.async {
+                 manager.keyCodeForAlert = Int(cgKeyCode)
+             }
+        }
+    }
+    // Si no es el evento que nos interesa (ej. no es keyDown o no es la tecla específica),
+    // pasamos el evento sin modificar para que el sistema lo procese normalmente.
+    return Unmanaged.passUnretained(event)
+}
+// --- FIN DE LA FUNCIÓN GLOBAL ---

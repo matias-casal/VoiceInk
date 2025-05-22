@@ -153,13 +153,17 @@ struct VoiceInkApp: App {
     }
 }
 
-class UpdaterViewModel: ObservableObject {
-    private let updaterController: SPUStandardUpdaterController
+class UpdaterViewModel: NSObject, ObservableObject, SPUUpdaterDelegate {
+    private var updaterController: SPUStandardUpdaterController!
     
     @Published var canCheckForUpdates = false
     
-    init() {
-        updaterController = SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: nil, userDriverDelegate: nil)
+    override init() {
+        // Primero llamamos a super.init() antes de usar self
+        super.init()
+        
+        // Ahora podemos usar self de forma segura
+        updaterController = SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: self, userDriverDelegate: nil)
         
         // Enable automatic update checking
         updaterController.updater.automaticallyChecksForUpdates = true
@@ -177,6 +181,18 @@ class UpdaterViewModel: ObservableObject {
     func silentlyCheckForUpdates() {
         // This checks for updates in the background without showing UI unless an update is found
         updaterController.updater.checkForUpdatesInBackground()
+    }
+    
+    // MARK: - SPUUpdaterDelegate
+    
+    func updater(_ updater: SPUUpdater, shouldDownloadUpdate item: SUAppcastItem, reply: @escaping (Bool) -> Void) {
+        // Indica a Sparkle que no descargue la actualización.
+        // El usuario podría ser notificado de que hay una actualización disponible (dependiendo de la configuración de Sparkle y userDriverDelegate),
+        // pero la descarga/instalación se impedirá aquí.
+        reply(false)
+        
+        // Opcionalmente, se podría registrar este evento o informar al usuario de una manera personalizada.
+        print("INFO: Se encontró la actualización \(item.versionString), pero la descarga está deshabilitada.")
     }
 }
 
