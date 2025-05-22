@@ -49,7 +49,7 @@ struct APIKeyManagementView: View {
                 }
             }
             
-            .onChange(of: aiService.selectedProvider) { _ in
+            .onChange(of: aiService.selectedProvider) { oldValue, newValue in
                 if aiService.selectedProvider == .ollama {
                     checkOllamaConnection()
                 }

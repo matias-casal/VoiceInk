@@ -64,6 +64,12 @@ class MenuBarManager: ObservableObject {
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
             
+            if self.isMenuBarOnly {
+                NSApp.setActivationPolicy(.accessory)
+            } else {
+                NSApp.setActivationPolicy(.regular)
+            }
+            
             // Activate the app
             NSApp.activate(ignoringOtherApps: true)
             

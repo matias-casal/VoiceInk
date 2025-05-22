@@ -53,7 +53,6 @@ actor WhisperContext {
             logger.notice("🌐 Using auto language detection")
         }
         
-        // Use prompt for all languages
         if prompt != nil {
             promptCString = Array(prompt!.utf8CString)
             params.initial_prompt = promptCString?.withUnsafeBufferPointer { ptr in
@@ -64,7 +63,7 @@ actor WhisperContext {
             promptCString = nil
             params.initial_prompt = nil
         }
-        // Adapted from whisper.objc
+        
         params.print_realtime   = true
         params.print_progress   = false
         params.print_timestamps = true
@@ -85,7 +84,7 @@ actor WhisperContext {
                 let langId = whisper_full_lang_id(context)
                 let detectedLang = String(cString: whisper_lang_str(langId))
                 logger.notice("✅ Transcription completed - Language: \(detectedLang)")
-                whisper_print_timings(context)
+                
             }
         }
         
@@ -100,7 +99,9 @@ actor WhisperContext {
             transcription += String(cString: whisper_full_get_segment_text(context, i))
         }
         // Apply hallucination filtering
-        return WhisperHallucinationFilter.filter(transcription)
+        let filteredTranscription = WhisperHallucinationFilter.filter(transcription)
+
+        return filteredTranscription
     }
 
     static func createContext(path: String) async throws -> WhisperContext {

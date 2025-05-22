@@ -10,6 +10,7 @@ struct MenuBarView: View {
     @EnvironmentObject var aiService: AIService
     @State private var launchAtLoginEnabled = LaunchAtLogin.isEnabled
     @State private var menuRefreshTrigger = false  // Added to force menu updates
+    @State private var isHovered = false
     
     var body: some View {
         VStack {
@@ -112,7 +113,7 @@ struct MenuBarView: View {
                 }
             }
             
-            LanguageSelectionView(whisperState: whisperState, displayMode: .menuItem)
+            LanguageSelectionView(whisperState: whisperState, displayMode: .menuItem, whisperPrompt: whisperState.whisperPrompt)
             
             Toggle("Use Clipboard Context", isOn: $enhancementService.useClipboardContext)
                 .disabled(!enhancementService.isEnhancementEnabled)
@@ -176,7 +177,7 @@ struct MenuBarView: View {
             }
             
             Toggle("Launch at Login", isOn: $launchAtLoginEnabled)
-                .onChange(of: launchAtLoginEnabled) { newValue in
+                .onChange(of: launchAtLoginEnabled) { oldValue, newValue in
                     LaunchAtLogin.isEnabled = newValue
                 }
             

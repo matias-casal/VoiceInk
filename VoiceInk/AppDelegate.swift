@@ -7,10 +7,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        updateActivationPolicy()
+        
         if !flag {
             createMainWindowIfNeeded()
         }
         return true
+    }
+    
+    func applicationDidBecomeActive(_ notification: Notification) {
+        updateActivationPolicy()
     }
     
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {

@@ -12,68 +12,35 @@ class ScreenCaptureService: ObservableObject {
         category: "aienhancement"
     )
     
-    // Maximum number of retries for capture attempts
-    private let maxCaptureRetries = 3
-    // Delay between capture retries in seconds
-    private let captureRetryDelay: TimeInterval = 0.5
-    
     private func getActiveWindowInfo() -> (title: String, ownerName: String, windowID: CGWindowID)? {
-        // Try multiple window list options to improve reliability
-        let options: [CGWindowListOption] = [
-            [.optionOnScreenOnly, .excludeDesktopElements],
-            [.optionOnScreenOnly],
-            []
-        ]
+        let windowListInfo = CGWindowListCopyWindowInfo([.optionOnScreenOnly], kCGNullWindowID) as? [[String: Any]] ?? []
         
-        for option in options {
-            let windowListInfo = CGWindowListCopyWindowInfo(option, kCGNullWindowID) as? [[String: Any]] ?? []
-            
-            // Find the frontmost window that isn't our own app
-            if let frontWindow = windowListInfo.first(where: { info in
-                let layer = info[kCGWindowLayer as String] as? Int32 ?? 0
-                let ownerName = info[kCGWindowOwnerName as String] as? String ?? ""
-                // Exclude our own app and system UI elements
-                return layer == 0 && ownerName != "VoiceInk" && !ownerName.contains("Dock") && !ownerName.contains("Menu Bar")
-            }) {
-                guard let windowID = frontWindow[kCGWindowNumber as String] as? CGWindowID,
-                      let ownerName = frontWindow[kCGWindowOwnerName as String] as? String,
-                      let title = frontWindow[kCGWindowName as String] as? String else {
-                    continue
-                }
-                
-                return (title: title, ownerName: ownerName, windowID: windowID)
-            }
-        }
-        
-        // If we couldn't find a window with the normal approach, try a more aggressive approach
-        logger.notice("Trying fallback window detection approach")
-        let allWindows = CGWindowListCopyWindowInfo(.optionAll, kCGNullWindowID) as? [[String: Any]] ?? []
-        
-        // Find any visible window that isn't our own
-        if let visibleWindow = allWindows.first(where: { info in
+        // Find the frontmost window that isn't our own app
+        if let frontWindow = windowListInfo.first(where: { info in
+            let layer = info[kCGWindowLayer as String] as? Int32 ?? 0
             let ownerName = info[kCGWindowOwnerName as String] as? String ?? ""
-            let alpha = info[kCGWindowAlpha as String] as? Double ?? 0
-            return ownerName != "VoiceInk" && !ownerName.contains("Dock") && alpha > 0
+            // Exclude our own app and system UI elements
+            return layer == 0 && ownerName != "VoiceInk" && !ownerName.contains("Dock") && !ownerName.contains("Menu Bar")
         }) {
-            let windowID = visibleWindow[kCGWindowNumber as String] as? CGWindowID ?? 0
-            let ownerName = visibleWindow[kCGWindowOwnerName as String] as? String ?? "Unknown App"
-            let title = visibleWindow[kCGWindowName as String] as? String ?? "Unknown Window"
+            guard let windowID = frontWindow[kCGWindowNumber as String] as? CGWindowID,
+                  let ownerName = frontWindow[kCGWindowOwnerName as String] as? String,
+                  let title = frontWindow[kCGWindowName as String] as? String else {
+                return nil
+            }
             
-            logger.notice("Found fallback window: \(title, privacy: .public) (\(ownerName, privacy: .public))")
             return (title: title, ownerName: ownerName, windowID: windowID)
         }
         
-        logger.notice("❌ No suitable window found for capture")
         return nil
     }
     
     func captureActiveWindow() -> NSImage? {
         guard let windowInfo = getActiveWindowInfo() else {
             logger.notice("❌ Failed to get window info for capture")
-            return captureFullScreen() // Fallback to full screen capture
+            return captureFullScreen()
         }
         
-        // Try to capture the specific window
+        // Capture the specific window
         let cgImage = CGWindowListCreateImage(
             .null,
             .optionIncludingWindow,
@@ -85,15 +52,14 @@ class ScreenCaptureService: ObservableObject {
             logger.notice("✅ Successfully captured window")
             return NSImage(cgImage: cgImage, size: NSSize(width: cgImage.width, height: cgImage.height))
         } else {
-            logger.notice("⚠️ Window-specific capture failed, trying fallback methods")
-            return captureFullScreen() // Fallback to full screen
+            logger.notice("⚠️ Window-specific capture failed, trying full screen")
+            return captureFullScreen()
         }
     }
     
     private func captureFullScreen() -> NSImage? {
-        logger.notice("📺 Attempting full screen capture as fallback")
+        logger.notice("📺 Attempting full screen capture")
         
-        // Capture the entire screen
         if let screen = NSScreen.main {
             let rect = screen.frame
             let cgImage = CGWindowListCreateImage(
@@ -174,59 +140,42 @@ class ScreenCaptureService: ObservableObject {
         
         logger.notice("🎬 Starting screen capture")
         
-        // Try multiple times to get a successful capture
-        for attempt in 1...maxCaptureRetries {
-            logger.notice("🔄 Capture attempt \(attempt, privacy: .public) of \(self.maxCaptureRetries, privacy: .public)")
-            
-            // First get window info
-            guard let windowInfo = getActiveWindowInfo() else {
-                logger.notice("❌ Failed to get window info on attempt \(attempt, privacy: .public)")
-                if attempt < maxCaptureRetries {
-                    try? await Task.sleep(nanoseconds: UInt64(captureRetryDelay * 1_000_000_000))
-                    continue
+        // Get window info
+        guard let windowInfo = getActiveWindowInfo() else {
+            logger.notice("❌ Failed to get window info")
+            return nil
+        }
+        
+        logger.notice("🎯 Found window: \(windowInfo.title, privacy: .public) (\(windowInfo.ownerName, privacy: .public))")
+        
+        // Start with window metadata
+        var contextText = """
+        Active Window: \(windowInfo.title)
+        Application: \(windowInfo.ownerName)
+        
+        """
+        
+        // Capture and process window content
+        if let capturedImage = captureActiveWindow() {
+            let extractedText = await withCheckedContinuation({ continuation in
+                extractText(from: capturedImage) { text in
+                    continuation.resume(returning: text)
                 }
-                return nil
-            }
+            })
             
-            logger.notice("🎯 Found window: \(windowInfo.title, privacy: .public) (\(windowInfo.ownerName, privacy: .public))")
-            
-            // Start with window metadata
-            var contextText = """
-            Active Window: \(windowInfo.title)
-            Application: \(windowInfo.ownerName)
-            
-            """
-            
-            // Then capture and process window content
-            if let capturedImage = captureActiveWindow() {
-                if let extractedText = await withCheckedContinuation({ continuation in
-                    extractText(from: capturedImage) { text in
-                        continuation.resume(returning: text)
-                    }
-                }) {
-                    contextText += "Window Content:\n\(extractedText)"
-                    // Log immediately after text extraction
-                    logger.notice("✅ Captured: \(contextText, privacy: .public)")
-                    
-                    // Ensure lastCapturedText is set on the main thread
-                    await MainActor.run {
-                        self.lastCapturedText = contextText
-                    }
-                    
-                    return contextText
-                } else {
-                    logger.notice("⚠️ Failed to extract text from image on attempt \(attempt, privacy: .public)")
+            if let extractedText = extractedText {
+                contextText += "Window Content:\n\(extractedText)"
+                logger.notice("✅ Captured text successfully")
+                
+                await MainActor.run {
+                    self.lastCapturedText = contextText
                 }
-            } else {
-                logger.notice("⚠️ Failed to capture window image on attempt \(attempt, privacy: .public)")
-            }
-            
-            if attempt < maxCaptureRetries {
-                try? await Task.sleep(nanoseconds: UInt64(captureRetryDelay * 1_000_000_000))
+                
+                return contextText
             }
         }
         
-        logger.notice("❌ All capture attempts failed")
+        logger.notice("❌ Capture attempt failed")
         return nil
     }
 } 

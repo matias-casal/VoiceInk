@@ -193,9 +193,11 @@ class AIEnhancementService: ObservableObject {
             throw EnhancementError.emptyText
         }
         
-        let formattedText = "<TRANSCRIPT>\n\(text)\n</TRANSCRIPT>"
+        let formattedText = "\n<TRANSCRIPT>\n\(text)\n</TRANSCRIPT>"
         let mode = determineMode(text: text)
         let systemMessage = getSystemMessage(for: mode)
+        
+        logger.notice("🛰️ Sending to AI provider: \(self.aiService.selectedProvider.rawValue)\nSystem Message: \(systemMessage)\nUser Message: \(formattedText)")
         
         if aiService.selectedProvider == .ollama {
             do {

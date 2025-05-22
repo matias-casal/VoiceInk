@@ -12,6 +12,7 @@ struct OnboardingPermission: Identifiable {
     
     enum PermissionType {
         case microphone
+        case audioDeviceSelection
         case accessibility
         case screenRecording
         case keyboardShortcut
@@ -19,6 +20,7 @@ struct OnboardingPermission: Identifiable {
         var systemName: String {
             switch self {
             case .microphone: return "mic"
+            case .audioDeviceSelection: return "headphones"
             case .accessibility: return "accessibility"
             case .screenRecording: return "rectangle.inset.filled.and.person.filled"
             case .keyboardShortcut: return "keyboard"
@@ -30,8 +32,9 @@ struct OnboardingPermission: Identifiable {
 struct OnboardingPermissionsView: View {
     @Binding var hasCompletedOnboarding: Bool
     @EnvironmentObject private var hotkeyManager: HotkeyManager
+    @ObservedObject private var audioDeviceManager = AudioDeviceManager.shared
     @State private var currentPermissionIndex = 0
-    @State private var permissionStates: [Bool] = [false, false, false, false]
+    @State private var permissionStates: [Bool] = [false, false, false, false, false]
     @State private var showAnimation = false
     @State private var scale: CGFloat = 0.8
     @State private var opacity: CGFloat = 0
@@ -43,6 +46,12 @@ struct OnboardingPermissionsView: View {
             description: "Enable your microphone to start speaking and converting your voice to text instantly.",
             icon: "waveform",
             type: .microphone
+        ),
+        OnboardingPermission(
+            title: "Microphone Selection",
+            description: "Select the audio input device you want to use with VoiceInk.",
+            icon: "headphones",
+            type: .audioDeviceSelection
         ),
         OnboardingPermission(
             title: "Accessibility Access",
@@ -122,6 +131,58 @@ struct OnboardingPermissionsView: View {
                             .scaleEffect(scale)
                             .opacity(opacity)
                             
+                            // Audio device selection (only shown for audio device selection step)
+                            if permissions[currentPermissionIndex].type == .audioDeviceSelection {
+                                VStack(spacing: 20) {
+                                    if audioDeviceManager.availableDevices.isEmpty {
+                                        VStack(spacing: 12) {
+                                            Image(systemName: "mic.slash.circle.fill")
+                                                .font(.system(size: 36))
+                                                .symbolRenderingMode(.hierarchical)
+                                                .foregroundStyle(.secondary)
+                                            
+                                            Text("No microphones found")
+                                                .font(.subheadline)
+                                                .foregroundStyle(.secondary)
+                                        }
+                                        .padding()
+                                    } else {
+                                        Picker("Select Microphone", selection: Binding(
+                                            get: { 
+                                                audioDeviceManager.selectedDeviceID ?? 
+                                                (audioDeviceManager.availableDevices.first?.id ?? 0)
+                                            },
+                                            set: { newValue in
+                                                audioDeviceManager.selectDevice(id: newValue)
+                                                audioDeviceManager.selectInputMode(.custom)
+                                                withAnimation {
+                                                    permissionStates[currentPermissionIndex] = true
+                                                    showAnimation = true
+                                                }
+                                            }
+                                        )) {
+                                            ForEach(audioDeviceManager.availableDevices, id: \.id) { device in
+                                                Text(device.name).tag(device.id)
+                                            }
+                                        }
+                                        .pickerStyle(.menu)
+                                        .labelsHidden()
+                                        .frame(maxWidth: 300)
+                                        .padding(8)
+                                        .background(Color.white.opacity(0.1))
+                                        .cornerRadius(8)
+                                    }
+                                    
+                                    Text("For best results, using your Mac's built-in microphone is recommended.")
+                                        .font(.caption)
+                                        .foregroundColor(.white.opacity(0.7))
+                                        .multilineTextAlignment(.center)
+                                        .padding(.horizontal)
+                                }
+                                .scaleEffect(scale)
+                                .opacity(opacity)
+                            }
+                            
                             // Keyboard shortcut recorder (only shown for keyboard shortcut step)
                             if permissions[currentPermissionIndex].type == .keyboardShortcut {
                                 VStack(spacing: 16) {
@@ -134,12 +195,16 @@ struct OnboardingPermissionsView: View {
                                     
                                     VStack(spacing: 16) {
                                         KeyboardShortcuts.Recorder("Set Shortcut:", name: .toggleMiniRecorder) { newShortcut in
-                                            if newShortcut != nil {
-                                                permissionStates[currentPermissionIndex] = true
-                                            } else {
-                                                permissionStates[currentPermissionIndex] = false
+                                            withAnimation {
+                                                if newShortcut != nil {
+                                                    permissionStates[currentPermissionIndex] = true
+                                                    showAnimation = true
+                                                } else {
+                                                    permissionStates[currentPermissionIndex] = false
+                                                    showAnimation = false
+                                                }
+                                                hotkeyManager.updateShortcutStatus()
                                             }
-                                            hotkeyManager.updateShortcutStatus()
                                         }
                                         .controlSize(.large)
                                         
@@ -167,7 +232,9 @@ struct OnboardingPermissionsView: View {
                             }
                             .buttonStyle(ScaleButtonStyle())
                             
-                            if !permissionStates[currentPermissionIndex] && permissions[currentPermissionIndex].type != .keyboardShortcut {
+                            if !permissionStates[currentPermissionIndex] && 
+                               permissions[currentPermissionIndex].type != .keyboardShortcut &&
+                               permissions[currentPermissionIndex].type != .audioDeviceSelection {
                                 SkipButton(text: "Skip for now") {
                                     moveToNext()
                                 }
@@ -187,6 +254,8 @@ struct OnboardingPermissionsView: View {
         .onAppear {
             checkExistingPermissions()
             animateIn()
+            // Ensure audio devices are loaded
+            audioDeviceManager.loadAvailableDevices()
         }
     }
     
@@ -207,14 +276,17 @@ struct OnboardingPermissionsView: View {
         // Check microphone permission
         permissionStates[0] = AVCaptureDevice.authorizationStatus(for: .audio) == .authorized
         
+        // Check if device is selected
+        permissionStates[1] = audioDeviceManager.selectedDeviceID != nil
+        
         // Check accessibility permission
-        permissionStates[1] = AXIsProcessTrusted()
+        permissionStates[2] = AXIsProcessTrusted()
         
         // Check screen recording permission
-        permissionStates[2] = CGPreflightScreenCaptureAccess()
+        permissionStates[3] = CGPreflightScreenCaptureAccess()
         
         // Check keyboard shortcut
-        permissionStates[3] = hotkeyManager.isShortcutConfigured
+        permissionStates[4] = hotkeyManager.isShortcutConfigured
     }
     
     private func requestPermission() {
@@ -235,6 +307,29 @@ struct OnboardingPermissionsView: View {
                     }
                 }
             }
+            
+        case .audioDeviceSelection:
+            // If no device is selected, select the fallback device
+            if audioDeviceManager.availableDevices.isEmpty {
+                withAnimation {
+                    permissionStates[currentPermissionIndex] = true
+                    showAnimation = true
+                }
+                moveToNext()
+                return
+            }
+            
+            if audioDeviceManager.selectedDeviceID == nil {
+                if let firstDevice = audioDeviceManager.availableDevices.first {
+                    audioDeviceManager.selectDevice(id: firstDevice.id)
+                    audioDeviceManager.selectInputMode(.custom)
+                    withAnimation {
+                        permissionStates[currentPermissionIndex] = true
+                        showAnimation = true
+                    }
+                }
+            }
+            moveToNext()
             
         case .accessibility:
             let options: NSDictionary = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true]
@@ -287,9 +382,13 @@ struct OnboardingPermissionsView: View {
     }
     
     private func getButtonTitle() -> String {
-        if permissions[currentPermissionIndex].type == .keyboardShortcut {
+        switch permissions[currentPermissionIndex].type {
+        case .keyboardShortcut:
             return permissionStates[currentPermissionIndex] ? "Continue" : "Set Shortcut"
+        case .audioDeviceSelection:
+            return "Continue"
+        default:
+            return permissionStates[currentPermissionIndex] ? "Continue" : "Enable Access"
         }
-        return permissionStates[currentPermissionIndex] ? "Continue" : "Enable Access"
     }
 }

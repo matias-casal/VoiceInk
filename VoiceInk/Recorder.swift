@@ -5,15 +5,13 @@ import os
 
 @MainActor
 class Recorder: ObservableObject {
-    private var engine: AVAudioEngine?
-    private var file: AVAudioFile?
-    private let logger = Logger(subsystem: "com.bootweb.VoiceInk", category: "Recorder")
+    private var recorder: AVAudioRecorder?
+    private let logger = Logger(subsystem: "com.prakashjoshipax.voiceink", category: "Recorder")
     private let deviceManager = AudioDeviceManager.shared
     private var deviceObserver: NSObjectProtocol?
     private var isReconfiguring = false
     private let mediaController = MediaController.shared
     @Published var audioMeter = AudioMeter(averagePower: 0, peakPower: 0)
-    private var latestBuffer: AVAudioPCMBuffer?
     
     enum RecorderError: Error {
         case couldNotStartRecording
@@ -34,9 +32,9 @@ class Recorder: ObservableObject {
     private func handleDeviceChange() async {
         guard !isReconfiguring else { return }
         isReconfiguring = true
-
-        if engine != nil {
-            let currentURL = file?.url
+        
+        if recorder != nil {
+            let currentURL = recorder?.url
             stopRecording()
             try? await Task.sleep(nanoseconds: 100_000_000)
             
@@ -63,10 +61,11 @@ class Recorder: ObservableObject {
     
     func startRecording(toOutputFile url: URL) async throws {
         deviceManager.isRecordingActive = true
-
+        
         Task { 
             await mediaController.muteSystemAudio()
         }
+        
         let deviceID = deviceManager.getCurrentDevice()
         if deviceID != 0 {
             do {
@@ -76,11 +75,7 @@ class Recorder: ObservableObject {
             }
         }
         
-        engine = AVAudioEngine()
-        let inputNode = engine!.inputNode
-        let inputFormat = inputNode.outputFormat(forBus: 0)
-        
-        let whisperSettings: [String: Any] = [
+        let recordSettings: [String: Any] = [
             AVFormatIDKey: Int(kAudioFormatLinearPCM),
             AVSampleRateKey: 16000.0,
             AVNumberOfChannelsKey: 1,
@@ -90,127 +85,68 @@ class Recorder: ObservableObject {
             AVLinearPCMIsNonInterleaved: false
         ]
         
-        let processingFormat = AVAudioFormat(
-            commonFormat: .pcmFormatFloat32,
-            sampleRate: 16000.0,
-            channels: 1,
-            interleaved: false
-        )!
-        
         do {
-            file = try AVAudioFile(forWriting: url, settings: whisperSettings)
+            recorder = try AVAudioRecorder(url: url, settings: recordSettings)
+            recorder?.isMeteringEnabled = true
+            
+            if recorder?.record() == false {
+                logger.error("❌ Could not start recording")
+                throw RecorderError.couldNotStartRecording
+            }
+            
+            Task {
+                while recorder != nil {
+                    updateAudioMeter()
+                    try? await Task.sleep(nanoseconds: 33_000_000)
+                }
+            }
+            
         } catch {
-            logger.error("Failed to create audio file: \(error.localizedDescription)")
-            stopRecording()
-            throw RecorderError.couldNotStartRecording
-        }
-        
-        inputNode.installTap(onBus: 0, bufferSize: 1024, format: inputFormat) { [weak self] buffer, _ in
-            guard let self = self else { return }
-            
-            let processedBuffer: AVAudioPCMBuffer
-            if buffer.format != processingFormat {
-                guard let converter = AVAudioConverter(from: buffer.format, to: processingFormat),
-                      let newBuffer = AVAudioPCMBuffer(pcmFormat: processingFormat, 
-                                                      frameCapacity: AVAudioFrameCount(Double(buffer.frameLength) * 
-                                                                                    (16000.0 / buffer.format.sampleRate))) else {
-                    self.logger.error("Failed to create converter or buffer")
-                    return
-                }
-                
-                var error: NSError?
-                let status = converter.convert(to: newBuffer, error: &error) { _, outStatus in
-                    outStatus.pointee = .haveData
-                    return buffer
-                }
-                
-                if status == .error || error != nil {
-                    self.logger.error("Format conversion failed: \(error?.localizedDescription ?? "unknown error")")
-                    return
-                }
-                
-                processedBuffer = newBuffer
-            } else {
-                processedBuffer = buffer
-            }
-            
-            Task { @MainActor in
-                self.latestBuffer = processedBuffer
-                self.calculateAndUpdateAudioLevel(buffer: processedBuffer)
-            }
-            
-            do {
-                guard let int16Converter = AVAudioConverter(from: processedBuffer.format, to: self.file!.processingFormat),
-                      let int16Buffer = AVAudioPCMBuffer(pcmFormat: self.file!.processingFormat, 
-                                                        frameCapacity: processedBuffer.frameLength) else {
-                    self.logger.error("Failed to create int16 converter")
-                    return
-                }
-                
-                var conversionError: NSError?
-                let conversionStatus = int16Converter.convert(to: int16Buffer, error: &conversionError) { _, outStatus in
-                    outStatus.pointee = .haveData
-                    return processedBuffer
-                }
-                
-                if conversionStatus == .error || conversionError != nil {
-                    self.logger.error("Int16 conversion failed")
-                    return
-                }
-                
-                try self.file?.write(from: int16Buffer)
-            } catch {
-                self.logger.error("Failed to write audio buffer: \(error.localizedDescription)")
-            }
-        }
-        
-        do {
-            try engine!.start()
-        } catch {
-            logger.error("❌ Failed to start audio engine: \(error.localizedDescription)")
+            logger.error("Failed to create audio recorder: \(error.localizedDescription)")
             stopRecording()
             throw RecorderError.couldNotStartRecording
         }
     }
     
     func stopRecording() {
-        let wasRunning = engine != nil
-        defer {
-            deviceManager.isRecordingActive = false
-            engine?.stop()
-            engine = nil
-        }
-
+        recorder?.stop()
+        recorder = nil
         audioMeter = AudioMeter(averagePower: 0, peakPower: 0)
-        engine?.inputNode.removeTap(onBus: 0)
-        file = nil
-        NotificationCenter.default.post(name: NSNotification.Name("AudioDeviceChanged"), object: nil)
         Task {
             await mediaController.unmuteSystemAudio()
         }
+        deviceManager.isRecordingActive = false
     }
     
-    private func calculateAndUpdateAudioLevel(buffer: AVAudioPCMBuffer) {
-        guard let floatData = buffer.floatChannelData else { return }
-        let channelData = floatData[0]
-        let frameLength = Int(buffer.frameLength)
+    private func updateAudioMeter() {
+        guard let recorder = recorder else { return }
+        recorder.updateMeters()
         
-        var sum: Float = 0
-        var peak: Float = 0
-        for i in 0..<frameLength {
-            let sample = channelData[i]
-            sum += sample * sample
-            peak = max(peak, abs(sample))
+        let averagePower = recorder.averagePower(forChannel: 0)
+        let peakPower = recorder.peakPower(forChannel: 0)
+        
+        let minVisibleDb: Float = -60.0 
+        let maxVisibleDb: Float = 0.0
+
+        let normalizedAverage: Float
+        if averagePower < minVisibleDb {
+            normalizedAverage = 0.0
+        } else if averagePower >= maxVisibleDb {
+            normalizedAverage = 1.0
+        } else {
+            normalizedAverage = (averagePower - minVisibleDb) / (maxVisibleDb - minVisibleDb)
         }
         
-        let rms = sqrt(sum / Float(frameLength))
-        let peakValue = peak
+        let normalizedPeak: Float
+        if peakPower < minVisibleDb {
+            normalizedPeak = 0.0
+        } else if peakPower >= maxVisibleDb {
+            normalizedPeak = 1.0
+        } else {
+            normalizedPeak = (peakPower - minVisibleDb) / (maxVisibleDb - minVisibleDb)
+        }
         
-        let multiplier: Double = 20.0
-        let scaledRMS = min(Double(rms) * multiplier, 1.0)
-        let scaledPeak = min(Double(peakValue) * multiplier, 1.0)
-        
-        audioMeter = AudioMeter(averagePower: scaledRMS, peakPower: scaledPeak)
+        audioMeter = AudioMeter(averagePower: Double(normalizedAverage), peakPower: Double(normalizedPeak))
     }
     
     deinit {

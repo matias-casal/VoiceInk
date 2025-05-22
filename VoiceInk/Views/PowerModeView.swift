@@ -349,23 +349,24 @@ struct PowerModeView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 32) {
-                // Video CTA Section
-                VideoCTAView(
-                    url: "https://dub.sh/powermode",
-                    subtitle: "See Power Mode in action"
-                )
-                
                 // Power Mode Toggle Section
                 VStack(alignment: .leading, spacing: 16) {
                     HStack {
                         Text("Enable Power Mode")
                             .font(.headline)
+                        
+                        InfoTip(
+                            title: "Power Mode",
+                            message: "Create app-specific or URL-specific configurations that automatically apply when using those apps or websites.",
+                            learnMoreURL: "https://www.youtube.com/watch?v=cEepexxgf6Y&t=10s"
+                        )
+                        
                         Spacer()
                         Toggle("", isOn: $powerModeManager.isPowerModeEnabled)
                             .toggleStyle(SwitchToggleStyle(tint: .blue))
                             .labelsHidden()
                             .scaleEffect(1.2)
-                            .onChange(of: powerModeManager.isPowerModeEnabled) { _ in
+                            .onChange(of: powerModeManager.isPowerModeEnabled) { oldValue, newValue in
                                 powerModeManager.savePowerModeEnabled()
                             }
                     }

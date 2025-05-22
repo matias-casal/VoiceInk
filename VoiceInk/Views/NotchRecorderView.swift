@@ -299,7 +299,7 @@ struct NotchAudioVisualizer: View {
                 )
             }
         }
-        .onChange(of: audioMeter) { newMeter in
+        .onChange(of: audioMeter) { oldValue, newValue in
            
             if isActive {
                 updateBars()

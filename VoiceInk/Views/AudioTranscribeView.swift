@@ -107,7 +107,7 @@ struct AudioTranscribeView: View {
                             HStack(spacing: 16) {
                                 Toggle("AI Enhancement", isOn: $isEnhancementEnabled)
                                     .toggleStyle(.switch)
-                                    .onChange(of: isEnhancementEnabled) { newValue in
+                                    .onChange(of: isEnhancementEnabled) { oldValue, newValue in
                                         enhancementService.isEnhancementEnabled = newValue
                                     }
                                 

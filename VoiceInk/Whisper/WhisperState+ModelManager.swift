@@ -38,6 +38,11 @@ extension WhisperState {
         
         do {
             whisperContext = try await WhisperContext.createContext(path: model.url.path)
+            
+            // Set the prompt from UserDefaults to ensure we have the latest
+            let currentPrompt = UserDefaults.standard.string(forKey: "TranscriptionPrompt") ?? whisperPrompt.transcriptionPrompt
+            await whisperContext?.setPrompt(currentPrompt)
+            
             isModelLoaded = true
             currentModel = model
         } catch {

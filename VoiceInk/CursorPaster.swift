@@ -22,7 +22,7 @@ class CursorPaster {
         
         // Use the preferred paste method based on user settings
         if UserDefaults.standard.bool(forKey: "UseAppleScriptPaste") {
-            pasteUsingAppleScript()
+            _ = pasteUsingAppleScript()
         } else {
             pasteUsingCommandV()
         }
@@ -45,7 +45,7 @@ class CursorPaster {
         
         var error: NSDictionary?
         if let scriptObject = NSAppleScript(source: script) {
-            let output = scriptObject.executeAndReturnError(&error)
+            _ = scriptObject.executeAndReturnError(&error)
             if error != nil {
                 print("AppleScript paste failed: \(error?.description ?? "Unknown error")")
                 logger.notice("AppleScript paste failed with error: \(error?.description ?? "Unknown error")")

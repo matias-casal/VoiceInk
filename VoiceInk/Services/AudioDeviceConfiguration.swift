@@ -6,9 +6,7 @@ import os
 class AudioDeviceConfiguration {
     private static let logger = Logger(subsystem: "com.bootweb.VoiceInk", category: "AudioDeviceConfiguration")
     
-    /// Configures audio session for a specific device
-    /// - Parameter deviceID: The ID of the audio device to configure
-    /// - Returns: A tuple containing the configured format and any error that occurred
+
     static func configureAudioSession(with deviceID: AudioDeviceID) throws -> AudioStreamBasicDescription {
         var propertySize = UInt32(MemoryLayout<AudioStreamBasicDescription>.size)
         var streamFormat = AudioStreamBasicDescription()
@@ -56,53 +54,10 @@ class AudioDeviceConfiguration {
             throw AudioConfigurationError.failedToGetDeviceFormat(status: status)
         }
         
-        // Ensure we're using a standard PCM format
-        streamFormat.mFormatID = kAudioFormatLinearPCM
-        streamFormat.mFormatFlags = kAudioFormatFlagIsFloat | kAudioFormatFlagIsPacked
-        
         return streamFormat
     }
     
-    /// Sets up an audio device for the audio unit
-    /// - Parameters:
-    ///   - deviceID: The ID of the audio device
-    ///   - audioUnit: The audio unit to configure
-    static func configureAudioUnit(_ audioUnit: AudioUnit, with deviceID: AudioDeviceID) throws {
-        var deviceIDCopy = deviceID
-        let propertySize = UInt32(MemoryLayout<AudioDeviceID>.size)
-        
-        // First disable the audio unit
-        let resetStatus = AudioUnitReset(audioUnit, kAudioUnitScope_Global, 0)
-        if resetStatus != noErr {
-            logger.error("Failed to reset audio unit: \(resetStatus)")
-        }
-        
-        logger.info("Configuring audio unit for device ID: \(deviceID)")
-        let setDeviceResult = AudioUnitSetProperty(
-            audioUnit,
-            kAudioOutputUnitProperty_CurrentDevice,
-            kAudioUnitScope_Global,
-            0,
-            &deviceIDCopy,
-            propertySize
-        )
-        
-        if setDeviceResult != noErr {
-            logger.error("Failed to set audio unit device: \(setDeviceResult)")
-            logger.error("Device ID: \(deviceID)")
-            if let deviceName = AudioDeviceManager.shared.getDeviceName(deviceID: deviceID) {
-                logger.error("Failed device name: \(deviceName)")
-            }
-            throw AudioConfigurationError.failedToSetAudioUnitDevice(status: setDeviceResult)
-        }
-        
-        logger.info("Successfully configured audio unit")
-        // Add a small delay to allow the device to settle
-        Thread.sleep(forTimeInterval: 0.1)
-    }
-    
-    /// Sets the default input device for recording
-    /// - Parameter deviceID: The ID of the audio device
+
     static func setDefaultInputDevice(_ deviceID: AudioDeviceID) throws {
         var deviceIDCopy = deviceID
         let propertySize = UInt32(MemoryLayout<AudioDeviceID>.size)
@@ -147,7 +102,6 @@ class AudioDeviceConfiguration {
 
 enum AudioConfigurationError: LocalizedError {
     case failedToGetDeviceFormat(status: OSStatus)
-    case failedToSetAudioUnitDevice(status: OSStatus)
     case failedToSetInputDevice(status: OSStatus)
     case failedToGetAudioUnit
     
@@ -155,8 +109,6 @@ enum AudioConfigurationError: LocalizedError {
         switch self {
         case .failedToGetDeviceFormat(let status):
             return "Failed to get device format: \(status)"
-        case .failedToSetAudioUnitDevice(let status):
-            return "Failed to set audio unit device: \(status)"
         case .failedToSetInputDevice(let status):
             return "Failed to set input device: \(status)"
         case .failedToGetAudioUnit:

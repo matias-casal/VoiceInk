@@ -61,7 +61,7 @@ class WindowStateDelegate: NSObject, NSWindowDelegate {
     
     func windowDidBecomeKey(_ notification: Notification) {
         // Ensure window is properly activated
-        guard let window = notification.object as? NSWindow else { return }
+        guard let _ = notification.object as? NSWindow else { return }
         NSApp.activate(ignoringOtherApps: true)
     }
 } 

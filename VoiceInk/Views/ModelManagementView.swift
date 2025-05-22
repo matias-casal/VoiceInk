@@ -7,6 +7,7 @@ struct ModelManagementView: View {
     @StateObject private var aiService = AIService()
     @EnvironmentObject private var enhancementService: AIEnhancementService
     @Environment(\.modelContext) private var modelContext
+    @StateObject private var whisperPrompt = WhisperPrompt()
     
     var body: some View {
         ScrollView {
@@ -51,7 +52,7 @@ struct ModelManagementView: View {
     }
     
     private var languageSelectionSection: some View {
-        LanguageSelectionView(whisperState: whisperState, displayMode: .full)
+        LanguageSelectionView(whisperState: whisperState, displayMode: .full, whisperPrompt: whisperPrompt)
     }
     
     private var availableModelsSection: some View {

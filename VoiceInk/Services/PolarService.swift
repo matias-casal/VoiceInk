@@ -6,6 +6,7 @@ class PolarService {
     private let apiToken = "Token"
     private let baseURL = "https://api.polar.sh"
     
+    
     struct LicenseValidationResponse: Codable {
         let status: String
         let limit_activations: Int?
@@ -55,7 +56,7 @@ class PolarService {
     
     // Try to get the Mac serial number
     private func getMacSerialNumber() -> String? {
-        let platformExpert = IOServiceGetMatchingService(kIOMasterPortDefault, IOServiceMatching("IOPlatformExpertDevice"))
+        let platformExpert = IOServiceGetMatchingService(kIOMainPortDefault, IOServiceMatching("IOPlatformExpertDevice"))
         if platformExpert == 0 { return nil }
         
         defer { IOObjectRelease(platformExpert) }

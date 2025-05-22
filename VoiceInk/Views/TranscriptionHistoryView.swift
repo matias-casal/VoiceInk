@@ -7,6 +7,7 @@ struct TranscriptionHistoryView: View {
     @State private var expandedTranscription: Transcription?
     @State private var selectedTranscriptions: Set<Transcription> = []
     @State private var showDeleteConfirmation = false
+    @State private var isViewCurrentlyVisible = false
     
     // Pagination states
     @State private var displayedTranscriptions: [Transcription] = []
@@ -17,9 +18,18 @@ struct TranscriptionHistoryView: View {
     @State private var lastTimestamp: Date?
     private let pageSize = 20
     
-    // Query for latest transcriptions (used for real-time updates)
-    @Query(sort: \Transcription.timestamp, order: .reverse) 
-    private var latestTranscriptions: [Transcription]
+    // New query: Fetches only the ID of the most recent transcription to minimize data loading.
+    // Renamed to latestTranscriptionIndicator to reflect its purpose.
+    @Query(Self.createLatestTranscriptionIndicatorDescriptor()) private var latestTranscriptionIndicator: [Transcription]
+    
+    // Static function to create the FetchDescriptor for the latest transcription indicator
+    private static func createLatestTranscriptionIndicatorDescriptor() -> FetchDescriptor<Transcription> {
+        var descriptor = FetchDescriptor<Transcription>(
+            sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
+        )
+        descriptor.fetchLimit = 1
+        return descriptor
+    }
     
     // Cursor-based query descriptor
     private func cursorQueryDescriptor(after timestamp: Date? = nil) -> FetchDescriptor<Transcription> {
@@ -121,9 +131,13 @@ struct TranscriptionHistoryView: View {
             Text("This action cannot be undone. Are you sure you want to delete \(selectedTranscriptions.count) item\(selectedTranscriptions.count == 1 ? "" : "s")?")
         }
         .onAppear {
+            isViewCurrentlyVisible = true
             Task {
                 await loadInitialContent()
             }
+        }
+        .onDisappear {
+            isViewCurrentlyVisible = false
         }
         .onChange(of: searchText) { _, _ in
             Task {
@@ -132,10 +146,13 @@ struct TranscriptionHistoryView: View {
             }
         }
         // Improved change detection for new transcriptions
-        .onChange(of: latestTranscriptions) { oldValue, newValue in
-            // Check if a new transcription was added
-            if !newValue.isEmpty && (oldValue.isEmpty || newValue[0].id != oldValue[0].id) {
+        .onChange(of: latestTranscriptionIndicator.first?.id) { oldId, newId in
+            guard isViewCurrentlyVisible else { return } // Only proceed if the view is visible
+
+            // Check if a new transcription was added or the latest one changed
+            if newId != oldId {
                 // Only refresh if we're on the first page (no pagination cursor set)
+                // or if the view is active and new content is relevant.
                 if lastTimestamp == nil {
                     Task {
                         await loadInitialContent()

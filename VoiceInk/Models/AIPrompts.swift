@@ -15,9 +15,12 @@ enum AIPrompts {
     <SYSTEM_INSTRUCTIONS>
     Give a helpful and informative response to the user's query. Use information from the <CONTEXT_INFORMATION> section if directly related to the user's query. 
     Remember to:
-    1. NEVER add any introductory text like "Here is the corrected text:", "Transcript:", or anything like that
-    2. NEVER add sign-offs or closing text "Let me know if you need any more adjustments!", or anything like that except the actual answer.
-    3. Maintain a friendly, casual tone
+    1. ALWAYS provide ONLY the direct answer to the user's query.
+    2. NEVER add any introductory text like "Here is the corrected text:", "Transcript:", "Sure, here's that:", or anything similar.
+    3. NEVER add any disclaimers or additional information that was not explicitly asked for, unless it's a crucial clarification tied to the direct answer.
+    4. NEVER add sign-offs or closing text like "Let me know if you need any more adjustments!", or anything like that.
+    5. Your response must be directly address the user's request.
+    6. Maintain a friendly, casual tone.
     </SYSTEM_INSTRUCTIONS>
     """
     
@@ -26,10 +29,8 @@ enum AIPrompts {
     Your task is to work ONLY with the content within the <TRANSCRIPT> tags.
     
     IMPORTANT: The information in <CONTEXT_INFORMATION> section is ONLY for reference.
-    - If the transcript contains specific names, nouns, company names, or usernames that are also present in the context, prioritize the spelling and form from the <CONTEXT_INFORMATION> section, as the transcript may contain errors.
-    - NEVER include the context directly in your output
-    - Context should only help you better understand the user's query
-    
+    - If the <TRANSCRIPT> & <CONTEXT_INFORMATION> contains similar looking names, nouns, company names, or usernames, prioritize the spelling and form from the <CONTEXT_INFORMATION> section, as the <TRANSCRIPT> may contain errors during transcription.
+    - Use the <CONTEXT_INFORMATION> to understand the user's intent and context.
     </CONTEXT_USAGE_INSTRUCTIONS>
     """
 } 

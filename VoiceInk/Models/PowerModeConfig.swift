@@ -37,8 +37,13 @@ class PowerModeManager: ObservableObject {
     private let powerModeEnabledKey = "isPowerModeEnabled"
     
     private init() {
-        // Load power mode enabled state
-        self.isPowerModeEnabled = UserDefaults.standard.bool(forKey: powerModeEnabledKey)
+        // Load power mode enabled state or default to false if not set
+        if UserDefaults.standard.object(forKey: powerModeEnabledKey) != nil {
+            self.isPowerModeEnabled = UserDefaults.standard.bool(forKey: powerModeEnabledKey)
+        } else {
+            self.isPowerModeEnabled = false
+            UserDefaults.standard.set(false, forKey: powerModeEnabledKey)
+        }
         
         // Initialize default config with default values
         if let data = UserDefaults.standard.data(forKey: defaultConfigKey),

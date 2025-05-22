@@ -11,10 +11,14 @@ struct LanguageSelectionView: View {
     @AppStorage("SelectedLanguage") private var selectedLanguage: String = "en"
     // Add display mode parameter with full as the default
     var displayMode: LanguageDisplayMode = .full
+    @ObservedObject var whisperPrompt: WhisperPrompt
 
     private func updateLanguage(_ language: String) {
         // Update UI state - the UserDefaults updating is now automatic with @AppStorage
         selectedLanguage = language
+
+        // Force the prompt to update for the new language
+        whisperPrompt.updateTranscriptionPrompt()
 
         // Post notification for language change
         NotificationCenter.default.post(name: .languageDidChange, object: nil)
@@ -58,6 +62,15 @@ struct LanguageSelectionView: View {
     // The original full view layout for settings page
     private var fullView: some View {
         VStack(alignment: .leading, spacing: 16) {
+            languageSelectionSection
+            
+            // Add prompt customization view below language selection
+            PromptCustomizationView(whisperPrompt: whisperPrompt)
+        }
+    }
+    
+    private var languageSelectionSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
             Text("Transcription Language")
                 .font(.headline)
 
@@ -71,14 +84,16 @@ struct LanguageSelectionView: View {
                         Picker("Select Language", selection: $selectedLanguage) {
                             ForEach(
                                 predefinedModel.supportedLanguages.sorted(by: {
-                                    $0.value < $1.value
+                                    if $0.key == "auto" { return true }
+                                    if $1.key == "auto" { return false }
+                                    return $0.value < $1.value
                                 }), id: \.key
                             ) { key, value in
                                 Text(value).tag(key)
                             }
                         }
                         .pickerStyle(MenuPickerStyle())
-                        .onChange(of: selectedLanguage) { newValue in
+                        .onChange(of: selectedLanguage) { oldValue, newValue in
                             updateLanguage(newValue)
                         }
 
@@ -132,7 +147,11 @@ struct LanguageSelectionView: View {
             if isMultilingualModel() {
                 Menu {
                     ForEach(
-                        getCurrentModelLanguages().sorted(by: { $0.value < $1.value }), id: \.key
+                        getCurrentModelLanguages().sorted(by: {
+                            if $0.key == "auto" { return true }
+                            if $1.key == "auto" { return false }
+                            return $0.value < $1.value
+                        }), id: \.key
                     ) { key, value in
                         Button {
                             updateLanguage(key)
