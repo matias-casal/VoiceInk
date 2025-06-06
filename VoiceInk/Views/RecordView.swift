@@ -228,7 +228,9 @@ struct RecordView: View {
                 .font(.headline)
             
             VStack(alignment: .leading, spacing: 12) {
-                InfoRow(icon: "doc.on.clipboard", text: "Copied to clipboard")
+                if whisperState.isAutoCopyEnabled {
+                    InfoRow(icon: "doc.on.clipboard", text: "Copied to clipboard")
+                }
                 InfoRow(icon: "text.cursor", text: "Pasted at cursor position")
             }
         }

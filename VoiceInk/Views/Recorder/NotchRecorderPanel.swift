@@ -29,7 +29,7 @@ class NotchRecorderPanel: KeyablePanel {
             
             // Calculate total width including controls and padding
             // 16pt padding on each side + space for controls
-            let controlsWidth: CGFloat = 44 // Space for buttons on each side (22 * 2)
+            let controlsWidth: CGFloat = 64 // Space for buttons on each side (increased width)
             let paddingWidth: CGFloat = 32 // 16pt on each side
             let totalWidth = baseNotchWidth + controlsWidth * 2 + paddingWidth
             
@@ -101,7 +101,7 @@ class NotchRecorderPanel: KeyablePanel {
         let baseNotchWidth: CGFloat = safeAreaInsets.left > 0 ? safeAreaInsets.left * 2 : 200
         
         // Calculate total width including controls and padding
-        let controlsWidth: CGFloat = 44 // Space for buttons on each side (22 * 2)
+        let controlsWidth: CGFloat = 64 // Space for buttons on each side (increased width)
         let paddingWidth: CGFloat = 32 // 16pt on each side
         let totalWidth = baseNotchWidth + controlsWidth * 2 + paddingWidth
         

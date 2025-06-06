@@ -7,16 +7,16 @@ extension KeyboardShortcuts.Name {
     static let toggleMiniRecorder = Self("toggleMiniRecorder")
     static let escapeRecorder = Self("escapeRecorder")
     static let toggleEnhancement = Self("toggleEnhancement")
-    // Prompt selection shortcuts
-    static let selectPrompt1 = Self("selectPrompt1")
-    static let selectPrompt2 = Self("selectPrompt2")
-    static let selectPrompt3 = Self("selectPrompt3")
-    static let selectPrompt4 = Self("selectPrompt4")
-    static let selectPrompt5 = Self("selectPrompt5")
-    static let selectPrompt6 = Self("selectPrompt6")
-    static let selectPrompt7 = Self("selectPrompt7")
-    static let selectPrompt8 = Self("selectPrompt8")
-    static let selectPrompt9 = Self("selectPrompt9")
+    // Power Mode selection shortcuts
+    static let selectPowerMode1 = Self("selectPowerMode1")
+    static let selectPowerMode2 = Self("selectPowerMode2")
+    static let selectPowerMode3 = Self("selectPowerMode3")
+    static let selectPowerMode4 = Self("selectPowerMode4")
+    static let selectPowerMode5 = Self("selectPowerMode5")
+    static let selectPowerMode6 = Self("selectPowerMode6")
+    static let selectPowerMode7 = Self("selectPowerMode7")
+    static let selectPowerMode8 = Self("selectPowerMode8")
+    static let selectPowerMode9 = Self("selectPowerMode9")
 }
 
 @MainActor
@@ -113,11 +113,11 @@ class HotkeyManager: ObservableObject {
                 if isVisible {
                     setupEscapeShortcut()
                     KeyboardShortcuts.setShortcut(.init(.e, modifiers: .command), for: .toggleEnhancement)
-                    setupPromptShortcuts()
+                    setupPowerModeShortcuts()
                 } else {
                     removeEscapeShortcut()
                     removeEnhancementShortcut()
-                    removePromptShortcuts()
+                    removePowerModeShortcuts()
                 }
             }
         }
@@ -276,61 +276,69 @@ class HotkeyManager: ObservableObject {
         }
     }
     
-    private func setupPromptShortcuts() {
+    private func setupPowerModeShortcuts() {
         // Set up Command+1 through Command+9 shortcuts with proper key definitions
-        KeyboardShortcuts.setShortcut(.init(.one, modifiers: .command), for: .selectPrompt1)
-        KeyboardShortcuts.setShortcut(.init(.two, modifiers: .command), for: .selectPrompt2)
-        KeyboardShortcuts.setShortcut(.init(.three, modifiers: .command), for: .selectPrompt3)
-        KeyboardShortcuts.setShortcut(.init(.four, modifiers: .command), for: .selectPrompt4)
-        KeyboardShortcuts.setShortcut(.init(.five, modifiers: .command), for: .selectPrompt5)
-        KeyboardShortcuts.setShortcut(.init(.six, modifiers: .command), for: .selectPrompt6)
-        KeyboardShortcuts.setShortcut(.init(.seven, modifiers: .command), for: .selectPrompt7)
-        KeyboardShortcuts.setShortcut(.init(.eight, modifiers: .command), for: .selectPrompt8)
-        KeyboardShortcuts.setShortcut(.init(.nine, modifiers: .command), for: .selectPrompt9)
+        KeyboardShortcuts.setShortcut(.init(.one, modifiers: .command), for: .selectPowerMode1)
+        KeyboardShortcuts.setShortcut(.init(.two, modifiers: .command), for: .selectPowerMode2)
+        KeyboardShortcuts.setShortcut(.init(.three, modifiers: .command), for: .selectPowerMode3)
+        KeyboardShortcuts.setShortcut(.init(.four, modifiers: .command), for: .selectPowerMode4)
+        KeyboardShortcuts.setShortcut(.init(.five, modifiers: .command), for: .selectPowerMode5)
+        KeyboardShortcuts.setShortcut(.init(.six, modifiers: .command), for: .selectPowerMode6)
+        KeyboardShortcuts.setShortcut(.init(.seven, modifiers: .command), for: .selectPowerMode7)
+        KeyboardShortcuts.setShortcut(.init(.eight, modifiers: .command), for: .selectPowerMode8)
+        KeyboardShortcuts.setShortcut(.init(.nine, modifiers: .command), for: .selectPowerMode9)
         
         // Setup handlers for each shortcut
-        setupPromptHandler(for: .selectPrompt1, index: 0)
-        setupPromptHandler(for: .selectPrompt2, index: 1)
-        setupPromptHandler(for: .selectPrompt3, index: 2)
-        setupPromptHandler(for: .selectPrompt4, index: 3)
-        setupPromptHandler(for: .selectPrompt5, index: 4)
-        setupPromptHandler(for: .selectPrompt6, index: 5)
-        setupPromptHandler(for: .selectPrompt7, index: 6)
-        setupPromptHandler(for: .selectPrompt8, index: 7)
-        setupPromptHandler(for: .selectPrompt9, index: 8)
+        setupPowerModeHandler(for: .selectPowerMode1, index: 0)
+        setupPowerModeHandler(for: .selectPowerMode2, index: 1)
+        setupPowerModeHandler(for: .selectPowerMode3, index: 2)
+        setupPowerModeHandler(for: .selectPowerMode4, index: 3)
+        setupPowerModeHandler(for: .selectPowerMode5, index: 4)
+        setupPowerModeHandler(for: .selectPowerMode6, index: 5)
+        setupPowerModeHandler(for: .selectPowerMode7, index: 6)
+        setupPowerModeHandler(for: .selectPowerMode8, index: 7)
+        setupPowerModeHandler(for: .selectPowerMode9, index: 8)
     }
     
-    private func setupPromptHandler(for shortcutName: KeyboardShortcuts.Name, index: Int) {
+    private func setupPowerModeHandler(for shortcutName: KeyboardShortcuts.Name, index: Int) {
         KeyboardShortcuts.onKeyDown(for: shortcutName) { [weak self] in
             Task { @MainActor in
                 guard let self = self,
-                      await self.whisperState.isMiniRecorderVisible,
-                      let enhancementService = await self.whisperState.getEnhancementService() else { return }
+                      await self.whisperState.isMiniRecorderVisible else { return }
                 
-                let prompts = enhancementService.allPrompts
-                if index < prompts.count {
-                    // Enable AI enhancement if it's not already enabled
-                    if !enhancementService.isEnhancementEnabled {
-                        enhancementService.isEnhancementEnabled = true
-                    }
-                    // Switch to the selected prompt
-                    enhancementService.setActivePrompt(prompts[index])
+                let powerModeManager = PowerModeManager.shared
+                
+                // Only proceed if Power Mode is enabled
+                guard powerModeManager.isPowerModeEnabled else { return }
+                
+                let availableConfigurations = powerModeManager.getAllAvailableConfigurations()
+                
+                if index < availableConfigurations.count {
+                    let selectedConfig = availableConfigurations[index]
+                    
+                    // Set as active configuration
+                    powerModeManager.setActiveConfiguration(selectedConfig)
+                    
+                    // Apply the configuration
+                    await ActiveWindowService.shared.applyConfiguration(selectedConfig)
+                    
+                    print("🎯 Switched to Power Mode: \(selectedConfig.name) via Command+\(index + 1)")
                 }
             }
         }
     }
     
-    private func removePromptShortcuts() {
+    private func removePowerModeShortcuts() {
         // Remove Command+1 through Command+9 shortcuts
-        KeyboardShortcuts.setShortcut(nil, for: .selectPrompt1)
-        KeyboardShortcuts.setShortcut(nil, for: .selectPrompt2)
-        KeyboardShortcuts.setShortcut(nil, for: .selectPrompt3)
-        KeyboardShortcuts.setShortcut(nil, for: .selectPrompt4)
-        KeyboardShortcuts.setShortcut(nil, for: .selectPrompt5)
-        KeyboardShortcuts.setShortcut(nil, for: .selectPrompt6)
-        KeyboardShortcuts.setShortcut(nil, for: .selectPrompt7)
-        KeyboardShortcuts.setShortcut(nil, for: .selectPrompt8)
-        KeyboardShortcuts.setShortcut(nil, for: .selectPrompt9)
+        KeyboardShortcuts.setShortcut(nil, for: .selectPowerMode1)
+        KeyboardShortcuts.setShortcut(nil, for: .selectPowerMode2)
+        KeyboardShortcuts.setShortcut(nil, for: .selectPowerMode3)
+        KeyboardShortcuts.setShortcut(nil, for: .selectPowerMode4)
+        KeyboardShortcuts.setShortcut(nil, for: .selectPowerMode5)
+        KeyboardShortcuts.setShortcut(nil, for: .selectPowerMode6)
+        KeyboardShortcuts.setShortcut(nil, for: .selectPowerMode7)
+        KeyboardShortcuts.setShortcut(nil, for: .selectPowerMode8)
+        KeyboardShortcuts.setShortcut(nil, for: .selectPowerMode9)
     }
     
     private func removeEnhancementShortcut() {
@@ -376,6 +384,7 @@ class HotkeyManager: ObservableObject {
             removeKeyMonitor()
             removeEscapeShortcut()
             removeEnhancementShortcut()
+            removePowerModeShortcuts()
         }
     }
 }

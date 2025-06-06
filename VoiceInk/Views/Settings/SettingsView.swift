@@ -10,6 +10,7 @@ struct SettingsView: View {
     @EnvironmentObject private var menuBarManager: MenuBarManager
     @EnvironmentObject private var hotkeyManager: HotkeyManager
     @EnvironmentObject private var whisperState: WhisperState
+    @EnvironmentObject private var enhancementService: AIEnhancementService
     @StateObject private var deviceManager = AudioDeviceManager.shared
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = true
     @State private var showResetOnboardingAlert = false
@@ -189,6 +190,52 @@ struct SettingsView: View {
                     subtitle: "Manage recording storage"
                 ) {
                     AudioCleanupSettingsView()
+                }
+                
+                // Data Management Section
+                SettingsSection(
+                    icon: "arrow.up.arrow.down.circle",
+                    title: "Data Management",
+                    subtitle: "Import or export your settings"
+                ) {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Export your custom prompts, power modes, word replacements, keyboard shortcuts, and app preferences to a backup file. API keys are not included in the export.")
+                            .settingsDescription()
+
+                        HStack(spacing: 12) {
+                            Button {
+                                ImportExportService.shared.importSettings(
+                                    enhancementService: enhancementService, 
+                                    whisperPrompt: whisperState.whisperPrompt, 
+                                    hotkeyManager: hotkeyManager, 
+                                    menuBarManager: menuBarManager, 
+                                    mediaController: MediaController.shared, 
+                                    soundManager: SoundManager.shared,
+                                    whisperState: whisperState
+                                )
+                            } label: {
+                                Label("Import Settings...", systemImage: "arrow.down.doc")
+                                    .frame(maxWidth: .infinity)
+                            }
+                            .controlSize(.large)
+
+                            Button {
+                                ImportExportService.shared.exportSettings(
+                                    enhancementService: enhancementService, 
+                                    whisperPrompt: whisperState.whisperPrompt, 
+                                    hotkeyManager: hotkeyManager, 
+                                    menuBarManager: menuBarManager, 
+                                    mediaController: MediaController.shared, 
+                                    soundManager: SoundManager.shared,
+                                    whisperState: whisperState
+                                )
+                            } label: {
+                                Label("Export Settings...", systemImage: "arrow.up.doc")
+                                    .frame(maxWidth: .infinity)
+                            }
+                            .controlSize(.large)
+                        }
+                    }
                 }
                 
                 // Reset Onboarding Section

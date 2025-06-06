@@ -5,7 +5,7 @@ enum PredefinedPrompts {
     private static let predefinedPromptsKey = "PredefinedPrompts"
     
     // Static UUIDs for predefined prompts
-    private static let defaultPromptId = UUID(uuidString: "00000000-0000-0000-0000-000000000001")!
+    static let defaultPromptId = UUID(uuidString: "00000000-0000-0000-0000-000000000001")!
     static let assistantPromptId = UUID(uuidString: "00000000-0000-0000-0000-000000000002")!
     
     static var all: [CustomPrompt] {

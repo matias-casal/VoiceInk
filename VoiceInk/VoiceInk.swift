@@ -78,6 +78,7 @@ struct VoiceInkApp: App {
         // Configure ActiveWindowService with enhancementService
         let activeWindowService = ActiveWindowService.shared
         activeWindowService.configure(with: enhancementService)
+        activeWindowService.configureWhisperState(whisperState)
         _activeWindowService = StateObject(wrappedValue: activeWindowService)
     }
     
@@ -113,8 +114,15 @@ struct VoiceInkApp: App {
                     .environmentObject(whisperState)
                     .environmentObject(aiService)
                     .environmentObject(enhancementService)
-                    .frame(minWidth: 1200, minHeight: 800)
-                   
+                    .frame(minWidth: 880, minHeight: 780)
+                    .cornerRadius(16)
+                    .clipped()
+                    .background(WindowAccessor { window in
+                        // Ensure this is called only once or is idempotent
+                        if window.title != "VoiceInk Onboarding" { // Prevent re-configuration
+                            WindowManager.shared.configureOnboardingPanel(window)
+                        }
+                    })
             }
         }
         .commands {

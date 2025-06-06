@@ -75,7 +75,6 @@ extension WhisperState {
             isTranscribing = false
             canTranscribe = true
             isMiniRecorderVisible = false
-            shouldCancelRecording = false
         }
 
 

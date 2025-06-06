@@ -7,29 +7,38 @@ class WindowManager {
     private init() {}
     
     func configureWindow(_ window: NSWindow) {
+        window.styleMask = [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView]
         window.titlebarAppearsTransparent = true
         window.titleVisibility = .hidden
-        window.styleMask.insert(.fullSizeContentView)
         window.backgroundColor = .windowBackgroundColor
         window.isReleasedWhenClosed = false
         window.title = "VoiceInk"
-        
-        // Add additional window configuration for better state management
         window.collectionBehavior = [.fullScreenPrimary]
-        
-        // Ensure proper window level and ordering
         window.level = .normal
+        window.isOpaque = true
+        window.isMovableByWindowBackground = false
+        window.minSize = NSSize(width: 0, height: 0)
+        window.orderFrontRegardless()
+    }
+    
+    func configureOnboardingPanel(_ window: NSWindow) {
+        window.styleMask = [.borderless, .fullSizeContentView, .resizable]
+        window.isMovableByWindowBackground = true
+        window.level = .floating
+        window.titlebarAppearsTransparent = true
+        window.titleVisibility = .hidden
+        window.backgroundColor = .clear
+        window.isReleasedWhenClosed = false
+        window.collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle]
+        window.title = "VoiceInk Onboarding"
+        window.isOpaque = false
+        window.minSize = NSSize(width: 900, height: 780)
         window.orderFrontRegardless()
     }
     
     func createMainWindow(contentView: NSView) -> NSWindow {
-        // Use a standard size that fits well on most displays
-        let defaultSize = NSSize(width: 1200, height: 800)
-        
-        // Get the main screen frame to help with centering
+        let defaultSize = NSSize(width: 940, height: 780)
         let screenFrame = NSScreen.main?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1200, height: 800)
-        
-        // Create window with centered position
         let xPosition = (screenFrame.width - defaultSize.width) / 2 + screenFrame.minX
         let yPosition = (screenFrame.height - defaultSize.height) / 2 + screenFrame.minY
         
@@ -43,7 +52,6 @@ class WindowManager {
         configureWindow(window)
         window.contentView = contentView
         
-        // Set up window delegate to handle window state changes
         let delegate = WindowStateDelegate()
         window.delegate = delegate
         
@@ -51,16 +59,13 @@ class WindowManager {
     }
 }
 
-// Add window delegate to handle window state changes
 class WindowStateDelegate: NSObject, NSWindowDelegate {
     func windowWillClose(_ notification: Notification) {
         guard let window = notification.object as? NSWindow else { return }
-        // Ensure window is properly hidden when closed
         window.orderOut(nil)
     }
     
     func windowDidBecomeKey(_ notification: Notification) {
-        // Ensure window is properly activated
         guard let _ = notification.object as? NSWindow else { return }
         NSApp.activate(ignoringOtherApps: true)
     }

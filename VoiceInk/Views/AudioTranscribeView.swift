@@ -38,7 +38,10 @@ struct AudioTranscribeView: View {
                                         .font(.subheadline)
                                         .foregroundColor(.secondary)
                                     Spacer()
-                                    AnimatedCopyButton(textToCopy: enhancedText)
+                                    HStack(spacing: 8) {
+                                        AnimatedCopyButton(textToCopy: enhancedText)
+                                        AnimatedSaveButton(textToSave: enhancedText)
+                                    }
                                 }
                                 Text(enhancedText)
                                     .textSelection(.enabled)
@@ -52,7 +55,10 @@ struct AudioTranscribeView: View {
                                         .font(.subheadline)
                                         .foregroundColor(.secondary)
                                     Spacer()
-                                    AnimatedCopyButton(textToCopy: transcription.text)
+                                    HStack(spacing: 8) {
+                                        AnimatedCopyButton(textToCopy: transcription.text)
+                                        AnimatedSaveButton(textToSave: transcription.text)
+                                    }
                                 }
                                 Text(transcription.text)
                                     .textSelection(.enabled)
@@ -64,7 +70,10 @@ struct AudioTranscribeView: View {
                                         .font(.subheadline)
                                         .foregroundColor(.secondary)
                                     Spacer()
-                                    AnimatedCopyButton(textToCopy: transcription.text)
+                                    HStack(spacing: 8) {
+                                        AnimatedCopyButton(textToCopy: transcription.text)
+                                        AnimatedSaveButton(textToSave: transcription.text)
+                                    }
                                 }
                                 Text(transcription.text)
                                     .textSelection(.enabled)

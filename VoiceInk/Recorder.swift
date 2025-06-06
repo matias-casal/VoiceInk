@@ -70,8 +70,10 @@ class Recorder: ObservableObject {
         if deviceID != 0 {
             do {
                 try await configureAudioSession(with: deviceID)
+                try? await Task.sleep(nanoseconds: 50_000_000)
             } catch {
                 logger.warning("⚠️ Failed to configure audio session for device \(deviceID), attempting to continue: \(error.localizedDescription)")
+                try? await Task.sleep(nanoseconds: 50_000_000)
             }
         }
         

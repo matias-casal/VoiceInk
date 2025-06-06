@@ -3,21 +3,22 @@
     <channel>
         <title>VoiceInk Releases</title>
         <item>
-            <title>1.28</title>
-            <pubDate>Sat, 15 May 2025 12:00:00 +0545</pubDate>
-            <sparkle:version>128</sparkle:version>
-            <sparkle:shortVersionString>1.28</sparkle:shortVersionString>
+            <title>1.31</title>
+            <pubDate>Sat, 5 June 2025 12:20:00 +0545</pubDate>
+            <sparkle:version>131</sparkle:version>
+            <sparkle:shortVersionString>1.31</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
             <description><![CDATA[
-                    <h3>What's New in Version 1.28 🚀⚡</h3>
+                    <h3>What's New in Version 1.31 🚀⚡</h3>
                             <ul>
-                              <li>🔄 Added option to specify output format for the transcription(useful for languages written in different styles like simplified & traditional language</li>
-                              <li>🐞 Fixed Dock Icon reappearing issue</li>
-                              <li>🖼️ Updated the app icon</li>
-                              <li>✨ Minor improvements</li>
+                                <li>📥 Added support for Importing & Exporting Prompts/Power Mode Configuration & general app settings</li>
+                                <li>😊 Added support for using custom emoji in Power Mode</li>
+                                <li>🌐 Added Yandex browser support for Power Mode</li>
+                                <li>🔧 Fixed ESC not properly cancelling transcription</li>
+                                <li>⚙️ Fixed Ollama model selection not updating in Power Mode</li>
                             </ul>
             ]]></description>
-           <enclosure url="https://github.com/Beingpax/VoiceInk/releases/download/v1.28/VoiceInk.dmg" length="7287500" type="application/octet-stream" sparkle:edSignature="1sVoDx6izVV2MuDI4sPRPlqlcEyK3h9HJQtkuK2vJPWYudlD3UX/yKrVoUuNR88/zOqya1Xl7Q4CY64wnsGgAg=="/>
+           <enclosure url="https://github.com/Beingpax/VoiceInk/releases/download/v1.31/VoiceInk.dmg" length="7599036" type="application/octet-stream" sparkle:edSignature="FvJ6HHBmRt8iNHNtVPpejqHIQSnslVJMVaUub+ueyai6/93PZ6WeMVtxVRfYi/2BHdMfMLytH8RXGWqK/fVlBQ=="/>
         </item>
     </channel>
 </rss>

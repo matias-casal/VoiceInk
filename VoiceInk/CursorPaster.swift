@@ -1,37 +1,42 @@
 import Foundation
 import AppKit
-import OSLog
 
 class CursorPaster {
     private static let pasteCompletionDelay: TimeInterval = 0.3
-    private static let logger = Logger(subsystem: "com.voiceink", category: "CursorPaster")
     
     static func pasteAtCursor(_ text: String) {
         guard AXIsProcessTrusted() else {
-            print("Accessibility permissions not granted. Cannot paste at cursor.")
             return
         }
         
-        // Save the current pasteboard contents
         let pasteboard = NSPasteboard.general
-        let oldContents = pasteboard.string(forType: .string)
         
-        // Set the new text to paste
+        var savedContents: [(NSPasteboard.PasteboardType, Data)] = []
+        let currentItems = pasteboard.pasteboardItems ?? []
+        
+        for item in currentItems {
+            for type in item.types {
+                if let data = item.data(forType: type) {
+                    savedContents.append((type, data))
+                }
+            }
+        }
+        
         pasteboard.clearContents()
         pasteboard.setString(text, forType: .string)
         
-        // Use the preferred paste method based on user settings
         if UserDefaults.standard.bool(forKey: "UseAppleScriptPaste") {
             _ = pasteUsingAppleScript()
         } else {
             pasteUsingCommandV()
         }
         
-        // Restore the original pasteboard content
         DispatchQueue.global(qos: .userInitiated).asyncAfter(deadline: .now() + pasteCompletionDelay) {
-            pasteboard.clearContents()
-            if let oldContents = oldContents {
-                pasteboard.setString(oldContents, forType: .string)
+            if !savedContents.isEmpty {
+                pasteboard.clearContents()
+                for (type, data) in savedContents {
+                    pasteboard.setData(data, forType: type)
+                }
             }
         }
     }
@@ -46,13 +51,7 @@ class CursorPaster {
         var error: NSDictionary?
         if let scriptObject = NSAppleScript(source: script) {
             _ = scriptObject.executeAndReturnError(&error)
-            if error != nil {
-                print("AppleScript paste failed: \(error?.description ?? "Unknown error")")
-                logger.notice("AppleScript paste failed with error: \(error?.description ?? "Unknown error")")
-                return false
-            }
-            logger.notice("AppleScript paste completed successfully")
-            return true
+            return error == nil
         }
         return false
     }
@@ -73,8 +72,5 @@ class CursorPaster {
         vDown?.post(tap: .cghidEventTap)
         vUp?.post(tap: .cghidEventTap)
         cmdUp?.post(tap: .cghidEventTap)
-        
-        logger.notice("Command+V paste completed")
     }
 }
-

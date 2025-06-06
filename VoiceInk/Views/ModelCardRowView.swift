@@ -33,39 +33,7 @@ struct ModelCardRowView: View {
             actionSection
         }
         .padding(16)
-        .background(
-            RoundedRectangle(cornerRadius: 14)
-                .fill(
-                    LinearGradient(
-                        gradient: Gradient(colors: [
-                            Color(NSColor.controlBackgroundColor).opacity(1.0),
-                            Color(NSColor.controlBackgroundColor).opacity(0.6)
-                        ]),
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 14)
-                        .stroke(
-                            LinearGradient(
-                                gradient: Gradient(colors: [
-                                    Color.white.opacity(0.3),
-                                    Color.white.opacity(0.05)
-                                ]),
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ),
-                            lineWidth: 1
-                        )
-                )
-                .shadow(
-                    color: Color.primary.opacity(0.08),
-                    radius: 8,
-                    x: 0,
-                    y: 4
-                )
-        )
+        .background(CardBackground(isSelected: isCurrent, useAccentGradientWhenSelected: isCurrent))
     }
     
     // MARK: - Components

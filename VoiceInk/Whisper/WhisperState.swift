@@ -48,6 +48,9 @@ class WhisperState: NSObject, ObservableObject, AVAudioRecorderDelegate {
     var recordedFile: URL? = nil
     let whisperPrompt = WhisperPrompt()
     
+    // Prompt detection service for trigger word handling
+    private let promptDetectionService = PromptDetectionService()
+    
     let modelContext: ModelContext
     
     private var modelUrl: URL? {
@@ -123,6 +126,14 @@ class WhisperState: NSObject, ObservableObject, AVAudioRecorderDelegate {
             if let recordedFile {
                 if !shouldCancelRecording {
                     await transcribeAudio(recordedFile)
+                } else {
+                    logger.info("🛑 Transcription and paste aborted in toggleRecord due to shouldCancelRecording flag.")
+                    await MainActor.run {
+                        isProcessing = false
+                        isTranscribing = false
+                        canTranscribe = true
+                    }
+                    await cleanupModelResources()
                 }
             } else {
                 logger.error("❌ No recorded file found after stopping recording")
@@ -153,9 +164,6 @@ class WhisperState: NSObject, ObservableObject, AVAudioRecorderDelegate {
                             // Clean up any old temporary file first
                             self.recordedFile = file
 
-                            // --- Start concurrent window config task immediately ---
-                            async let windowConfigTask: () = ActiveWindowService.shared.applyConfigurationForCurrentApp()
-
                             try await self.recorder.startRecording(toOutputFile: file)
                             self.logger.notice("✅ Audio engine started successfully.")
 
@@ -163,26 +171,22 @@ class WhisperState: NSObject, ObservableObject, AVAudioRecorderDelegate {
                                 self.isRecording = true
                                 self.isVisualizerActive = true
                             }
+                            
+                            await ActiveWindowService.shared.applyConfigurationForCurrentApp()
 
-                            Task {
-                                if let currentModel = await self.currentModel, await self.whisperContext == nil {
-                                    do {
-                                        try await self.loadModel(currentModel)
-                                    } catch {
-                                        self.logger.error("❌ Model loading failed: \(error.localizedDescription)")
-                                    }
+                            if let currentModel = await self.currentModel, await self.whisperContext == nil {
+                                do {
+                                    try await self.loadModel(currentModel)
+                                } catch {
+                                    self.logger.error("❌ Model loading failed: \(error.localizedDescription)")
                                 }
                             }
 
-                            Task {
-                                if let enhancementService = self.enhancementService,
-                                   enhancementService.isEnhancementEnabled &&
-                                   enhancementService.useScreenCaptureContext {
-                                    await enhancementService.captureScreenContext()
-                                }
+                            if let enhancementService = self.enhancementService,
+                               enhancementService.isEnhancementEnabled &&
+                               enhancementService.useScreenCaptureContext {
+                                await enhancementService.captureScreenContext()
                             }
-
-                            await windowConfigTask
 
                         } catch {
                             self.logger.error("❌ Failed to start recording: \(error.localizedDescription)")
@@ -242,7 +246,16 @@ class WhisperState: NSObject, ObservableObject, AVAudioRecorderDelegate {
     }
 
     private func transcribeAudio(_ url: URL) async {
-        if shouldCancelRecording { return }
+        if shouldCancelRecording {
+            logger.info("🎤 Transcription and paste aborted at the beginning of transcribeAudio due to shouldCancelRecording flag.")
+            await MainActor.run {
+                isProcessing = false
+                isTranscribing = false
+                canTranscribe = true
+            }
+            await cleanupModelResources()
+            return
+        }
         await MainActor.run {
             isProcessing = true
             isTranscribing = true
@@ -302,24 +315,36 @@ class WhisperState: NSObject, ObservableObject, AVAudioRecorderDelegate {
                 text = WordReplacementService.shared.applyReplacements(to: text)
                 logger.notice("✅ Word replacements applied")
             }
+            
+            var promptDetectionResult: PromptDetectionService.PromptDetectionResult? = nil
+            let originalText = text 
+            
+            if let enhancementService = enhancementService, enhancementService.isConfigured {
+                let detectionResult = promptDetectionService.analyzeText(text, with: enhancementService)
+                promptDetectionResult = detectionResult
+                await promptDetectionService.applyDetectionResult(detectionResult, to: enhancementService)
+            }
+            
             if let enhancementService = enhancementService,
                enhancementService.isEnhancementEnabled,
                enhancementService.isConfigured {
                 do {
                     if shouldCancelRecording { return }
-                    let enhancedText = try await enhancementService.enhance(text)
+                    // Use processed text (without trigger words) for AI enhancement
+                    let textForAI = promptDetectionResult?.processedText ?? text
+                    let enhancedText = try await enhancementService.enhance(textForAI)
                     let newTranscription = Transcription(
-                        text: text,
+                        text: originalText, 
                         duration: actualDuration,
                         enhancedText: enhancedText,
                         audioFileURL: permanentURLString
                     )
                     modelContext.insert(newTranscription)
                     try? modelContext.save()
-                    text = enhancedText
+                    text = enhancedText 
                 } catch {
                     let newTranscription = Transcription(
-                        text: text,
+                        text: originalText,
                         duration: actualDuration,
                         audioFileURL: permanentURLString
                     )
@@ -328,7 +353,7 @@ class WhisperState: NSObject, ObservableObject, AVAudioRecorderDelegate {
                 }
             } else {
                 let newTranscription = Transcription(
-                    text: text,
+                    text: originalText,
                     duration: actualDuration,
                     audioFileURL: permanentURLString
                 )
@@ -360,6 +385,13 @@ class WhisperState: NSObject, ObservableObject, AVAudioRecorderDelegate {
                 }
             }
             try? FileManager.default.removeItem(at: url)
+            
+            if let result = promptDetectionResult, 
+               let enhancementService = enhancementService, 
+               result.shouldEnableAI {
+                await promptDetectionService.restoreOriginalSettings(result, to: enhancementService)
+            }
+            
             await dismissMiniRecorder()
             await cleanupModelResources()
             

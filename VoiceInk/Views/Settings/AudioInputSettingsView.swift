@@ -83,6 +83,11 @@ struct AudioInputSettingsView: View {
                 .buttonStyle(.borderless)
             }
             
+            Text("Note: Selecting a device here will override your Mac\'s system-wide default microphone.")
+                .font(.caption)
+                .foregroundColor(.secondary)
+                .padding(.bottom, 8)
+
             VStack(spacing: 12) {
                 ForEach(audioDeviceManager.availableDevices, id: \.id) { device in
                     DeviceSelectionCard(
@@ -119,6 +124,10 @@ struct AudioInputSettingsView: View {
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
+                Text("Warning: Using a prioritized device will override your Mac\'s system-wide default microphone if it becomes active.")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .padding(.top, 4)
             }
             
             if audioDeviceManager.prioritizedDevices.isEmpty {

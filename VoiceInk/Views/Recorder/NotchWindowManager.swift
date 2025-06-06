@@ -4,7 +4,7 @@ import AppKit
 class NotchWindowManager: ObservableObject {
     @Published var isVisible = false
     private var windowController: NSWindowController?
-    private var notchPanel: NotchRecorderPanel?
+     var notchPanel: NotchRecorderPanel?
     private let whisperState: WhisperState
     private let recorder: Recorder
     

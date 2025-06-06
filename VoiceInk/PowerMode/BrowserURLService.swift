@@ -13,6 +13,7 @@ enum BrowserType {
     case vivaldi
     case orion
     case zen
+    case yandex
     
     var scriptName: String {
         switch self {
@@ -26,6 +27,7 @@ enum BrowserType {
         case .vivaldi: return "vivaldiURL"
         case .orion: return "orionURL"
         case .zen: return "zenURL"
+        case .yandex: return "yandexURL"
         }
     }
     
@@ -41,6 +43,7 @@ enum BrowserType {
         case .vivaldi: return "com.vivaldi.Vivaldi"
         case .orion: return "com.kagi.kagimacOS"
         case .zen: return "app.zen-browser.zen"
+        case .yandex: return "ru.yandex.desktop.yandex-browser"
         }
     }
     
@@ -56,11 +59,12 @@ enum BrowserType {
         case .vivaldi: return "Vivaldi"
         case .orion: return "Orion"
         case .zen: return "Zen Browser"
+        case .yandex: return "Yandex Browser"
         }
     }
     
     static var allCases: [BrowserType] {
-        [.safari, .arc, .chrome, .edge, .brave, .opera, .vivaldi, .orion]
+        [.safari, .arc, .chrome, .edge, .brave, .opera, .vivaldi, .orion, .yandex]
     }
     
     static var installedBrowsers: [BrowserType] {

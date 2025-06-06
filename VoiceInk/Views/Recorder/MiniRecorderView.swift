@@ -4,7 +4,8 @@ struct MiniRecorderView: View {
     @ObservedObject var whisperState: WhisperState
     @ObservedObject var recorder: Recorder
     @EnvironmentObject var windowManager: MiniWindowManager
-    @State private var showPromptPopover = false
+    @State private var showPowerModePopover = false
+    @ObservedObject private var powerModeManager = PowerModeManager.shared
     
     var body: some View {
         Group {
@@ -38,62 +39,49 @@ struct MiniRecorderView: View {
                             .strokeBorder(Color.white.opacity(0.1), lineWidth: 0.5)
                     }
                     .overlay {
-                        HStack(spacing: 16) {
-                            // Record Button
+                        HStack(spacing: 0) {
+                            // Record Button - on the left
                             NotchRecordButton(
                                 isRecording: whisperState.isRecording,
                                 isProcessing: whisperState.isProcessing
                             ) {
                                 Task { await whisperState.toggleRecord() }
                             }
-                            .frame(width: 18)
-                            .padding(.leading, -4)
+                            .frame(width: 24)
+                            .padding(.leading, 8)
                             
-                            // AI Enhancement Toggle
-                            if let enhancementService = whisperState.getEnhancementService() {
-                                NotchToggleButton(
-                                    isEnabled: enhancementService.isEnhancementEnabled,
-                                    icon: "sparkles",
-                                    color: .blue
-                                ) {
-                                    enhancementService.isEnhancementEnabled.toggle()
-                                }
-                                .frame(width: 18)
-                                .disabled(!enhancementService.isConfigured)
-                            }
-                            
-                            // Custom Prompt Toggle and Selector
-                            if let enhancementService = whisperState.getEnhancementService() {
-                                NotchToggleButton(
-                                    isEnabled: enhancementService.isEnhancementEnabled,
-                                    icon: enhancementService.activePrompt?.icon.rawValue ?? "text.badge.checkmark",
-                                    color: .green
-                                ) {
-                                    showPromptPopover.toggle()
-                                }
-                                .frame(width: 18)
-                                .disabled(!enhancementService.isEnhancementEnabled)
-                                .popover(isPresented: $showPromptPopover, arrowEdge: .bottom) {
-                                    NotchPromptPopover(enhancementService: enhancementService)
-                                }
-                            }
-                            
-                            // Visualizer
+                            // Visualizer - centered and expanded
                             Group {
                                 if whisperState.isProcessing {
-                                    NotchStaticVisualizer(color: .white)
+                                    StaticVisualizer(color: .white)
                                 } else {
-                                    NotchAudioVisualizer(
+                                    AudioVisualizer(
                                         audioMeter: recorder.audioMeter,
                                         color: .white,
                                         isActive: whisperState.isRecording
                                     )
                                 }
                             }
-                            .frame(width: 18)
-                            .padding(.trailing, -4)
+                            .frame(maxWidth: .infinity)
+                            .padding(.horizontal, 8)
+                            
+                            // Power Mode Button - on the right
+                            NotchToggleButton(
+                                isEnabled: powerModeManager.isPowerModeEnabled,
+                                icon: powerModeManager.currentActiveConfiguration.emoji,
+                                color: .orange,
+                                disabled: !powerModeManager.isPowerModeEnabled
+                            ) {
+                                if powerModeManager.isPowerModeEnabled {
+                                    showPowerModePopover.toggle()
+                                }
+                            }
+                            .frame(width: 24)
+                            .padding(.trailing, 8)
+                            .popover(isPresented: $showPowerModePopover, arrowEdge: .bottom) {
+                                PowerModePopover()
+                            }
                         }
-                        .padding(.horizontal, 8)
                         .padding(.vertical, 8)
                     }
                     .opacity(windowManager.isVisible ? 1 : 0)
@@ -102,4 +90,4 @@ struct MiniRecorderView: View {
     }
 }
 
-// Visual Effect View wrapper for NSVisualEffectVie
+
