@@ -17,7 +17,7 @@ class MenuBarManager: ObservableObject {
     private var enhancementService: AIEnhancementService
     private var aiService: AIService
     private var hotkeyManager: HotkeyManager
-    private var mainWindow: NSWindow?  // Store window reference
+    private var mainWindow: NSWindow?
     
     init(updaterViewModel: UpdaterViewModel, 
          whisperState: WhisperState, 
@@ -39,17 +39,62 @@ class MenuBarManager: ObservableObject {
         isMenuBarOnly.toggle()
     }
     
+    private func detectActiveScreen() -> NSScreen? {
+        // Method 1: Try to get screen from active window bounds
+        if let activeWindow = getActiveWindowInfo() {
+            let windowList = CGWindowListCopyWindowInfo([.optionOnScreenOnly], kCGNullWindowID) as? [[String: Any]] ?? []
+            
+            if let windowDict = windowList.first(where: { ($0[kCGWindowNumber as String] as? CGWindowID) == activeWindow.windowID }),
+               let boundsDict = windowDict[kCGWindowBounds as String] as? [String: Any],
+               let x = boundsDict["X"] as? CGFloat,
+               let y = boundsDict["Y"] as? CGFloat,
+               let width = boundsDict["Width"] as? CGFloat,
+               let height = boundsDict["Height"] as? CGFloat {
+                
+                let windowCenter = CGPoint(x: x + width/2, y: y + height/2)
+                return NSScreen.screens.first { screen in
+                    screen.frame.contains(windowCenter)
+                }
+            }
+        }
+        
+        // Method 2: Get screen from mouse cursor location
+        let mouseLocation = NSEvent.mouseLocation
+        if let screenWithMouse = NSScreen.screens.first(where: { $0.frame.contains(mouseLocation) }) {
+            return screenWithMouse
+        }
+        
+        // Method 3: Fallback to main screen
+        return NSScreen.main
+    }
+    
+    private func getActiveWindowInfo() -> (title: String, ownerName: String, windowID: CGWindowID)? {
+        let windowListInfo = CGWindowListCopyWindowInfo([.optionOnScreenOnly], kCGNullWindowID) as? [[String: Any]] ?? []
+        
+        if let frontWindow = windowListInfo.first(where: { info in
+            let layer = info[kCGWindowLayer as String] as? Int32 ?? 0
+            let ownerName = info[kCGWindowOwnerName as String] as? String ?? ""
+            return layer == 0 && ownerName != "VoiceInk" && !ownerName.contains("Dock") && !ownerName.contains("Menu Bar")
+        }) {
+            let title = frontWindow[kCGWindowName as String] as? String ?? "Unknown"
+            let ownerName = frontWindow[kCGWindowOwnerName as String] as? String ?? "Unknown"
+            let windowID = frontWindow[kCGWindowNumber as String] as? CGWindowID ?? 0
+            
+            return (title: title, ownerName: ownerName, windowID: windowID)
+        }
+        
+        return nil
+    }
+    
     private func updateAppActivationPolicy() {
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
             
-            // Clean up existing window if switching to menu bar mode
             if self.isMenuBarOnly && self.mainWindow != nil {
                 self.mainWindow?.close()
                 self.mainWindow = nil
             }
             
-            // Update activation policy
             if self.isMenuBarOnly {
                 NSApp.setActivationPolicy(.accessory)
             } else {
@@ -59,8 +104,6 @@ class MenuBarManager: ObservableObject {
     }
     
     func openMainWindowAndNavigate(to destination: String) {
-        print("MenuBarManager: Navigating to \(destination)")
-        
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
             
@@ -70,41 +113,43 @@ class MenuBarManager: ObservableObject {
                 NSApp.setActivationPolicy(.regular)
             }
             
-            // Activate the app
             NSApp.activate(ignoringOtherApps: true)
             
-            // Clean up existing window if it's no longer valid
             if let existingWindow = self.mainWindow, !existingWindow.isVisible {
                 self.mainWindow = nil
             }
             
-            // Get or create main window
             if self.mainWindow == nil {
                 self.mainWindow = self.createMainWindow()
             }
             
             guard let window = self.mainWindow else { return }
             
-            // Make the window key and order front
             window.makeKeyAndOrderFront(nil)
-            window.center()  // Always center the window for consistent positioning
+            self.centerWindowOnActiveScreen(window)
             
-            // Post a notification to navigate to the desired destination
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                 NotificationCenter.default.post(
                     name: .navigateToDestination,
                     object: nil,
                     userInfo: ["destination": destination]
                 )
-                print("MenuBarManager: Posted navigation notification for \(destination)")
             }
         }
     }
     
-    private func createMainWindow() -> NSWindow {
-        print("MenuBarManager: Creating new main window")
+    private func centerWindowOnActiveScreen(_ window: NSWindow) {
+        guard let activeScreen = detectActiveScreen() else { return }
         
-        // Create the content view with all required environment objects
+        let screenFrame = activeScreen.visibleFrame
+        let windowSize = window.frame.size
+        let xPosition = (screenFrame.width - windowSize.width) / 2 + screenFrame.minX
+        let yPosition = (screenFrame.height - windowSize.height) / 2 + screenFrame.minY
+        
+        window.setFrameOrigin(NSPoint(x: xPosition, y: yPosition))
+    }
+    
+    private func createMainWindow() -> NSWindow {
         let contentView = ContentView()
             .environmentObject(whisperState)
             .environmentObject(hotkeyManager)
@@ -114,17 +159,13 @@ class MenuBarManager: ObservableObject {
             .environmentObject(aiService)
             .environment(\.modelContext, ModelContext(container))
         
-        // Create window using WindowManager
         let hostingView = NSHostingView(rootView: contentView)
         let window = WindowManager.shared.createMainWindow(contentView: hostingView)
         
-        // Set window delegate to handle window closing
         let delegate = WindowDelegate { [weak self] in
             self?.mainWindow = nil
         }
         window.delegate = delegate
-        
-        print("MenuBarManager: Window setup complete")
         
         return window
     }

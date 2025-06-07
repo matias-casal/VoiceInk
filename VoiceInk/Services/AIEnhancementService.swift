@@ -405,8 +405,14 @@ class AIEnhancementService: ObservableObject {
         }
     }
     
-    func enhance(_ text: String) async throws -> String {
+    func enhance(_ text: String, duration: TimeInterval? = nil) async throws -> String {
         logger.notice("🚀 Starting AI enhancement for text (\(text.count) characters)")
+        
+        // Apply intelligent filter for short audio or low word count
+        if shouldSkipEnhancement(text: text, duration: duration) {
+            logger.notice("⏩ Skipping AI enhancement due to filter (short audio or few words), returning original transcription")
+            return text
+        }
         
         let enhancementPrompt: EnhancementPrompt = .transcriptionEnhancement
         
@@ -441,6 +447,33 @@ class AIEnhancementService: ObservableObject {
         }
         logger.notice("❌ AI enhancement failed: maximum retries exceeded")
         throw EnhancementError.maxRetriesExceeded
+    }
+    
+    private func shouldSkipEnhancement(text: String, duration: TimeInterval?) -> Bool {
+        let trimmedText = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        // Filter 1: Check word count (less than 5 words)
+        let words = trimmedText.components(separatedBy: .whitespacesAndNewlines)
+            .filter { !$0.isEmpty }
+        
+        if words.count < 5 {
+            logger.notice("📊 Text has only \(words.count) words (< 5), skipping enhancement")
+            return true
+        }
+        
+        // Filter 2: Check audio duration (less than 2 seconds)
+        if let duration = duration, duration < 2.0 {
+            logger.notice("📊 Audio duration is \(String(format: "%.1f", duration))s (< 2.0s), skipping enhancement")
+            return true
+        }
+        
+        // Filter 3: Check character count (extremely short text)
+        if trimmedText.count < 10 {
+            logger.notice("📊 Text has only \(trimmedText.count) characters (< 10), skipping enhancement")
+            return true
+        }
+        
+        return false
     }
     
     func captureScreenContext() async {

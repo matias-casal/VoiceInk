@@ -6,6 +6,53 @@ class WindowManager {
     
     private init() {}
     
+    func detectActiveScreen() -> NSScreen? {
+        // Method 1: Try to get screen from active window bounds
+        if let activeWindow = getActiveWindowInfo() {
+            let windowList = CGWindowListCopyWindowInfo([.optionOnScreenOnly], kCGNullWindowID) as? [[String: Any]] ?? []
+            
+            if let windowDict = windowList.first(where: { ($0[kCGWindowNumber as String] as? CGWindowID) == activeWindow.windowID }),
+               let boundsDict = windowDict[kCGWindowBounds as String] as? [String: Any],
+               let x = boundsDict["X"] as? CGFloat,
+               let y = boundsDict["Y"] as? CGFloat,
+               let width = boundsDict["Width"] as? CGFloat,
+               let height = boundsDict["Height"] as? CGFloat {
+                
+                let windowCenter = CGPoint(x: x + width/2, y: y + height/2)
+                return NSScreen.screens.first { screen in
+                    screen.frame.contains(windowCenter)
+                }
+            }
+        }
+        
+        // Method 2: Get screen from mouse cursor location
+        let mouseLocation = NSEvent.mouseLocation
+        if let screenWithMouse = NSScreen.screens.first(where: { $0.frame.contains(mouseLocation) }) {
+            return screenWithMouse
+        }
+        
+        // Method 3: Fallback to main screen
+        return NSScreen.main
+    }
+    
+    private func getActiveWindowInfo() -> (title: String, ownerName: String, windowID: CGWindowID)? {
+        let windowListInfo = CGWindowListCopyWindowInfo([.optionOnScreenOnly], kCGNullWindowID) as? [[String: Any]] ?? []
+        
+        if let frontWindow = windowListInfo.first(where: { info in
+            let layer = info[kCGWindowLayer as String] as? Int32 ?? 0
+            let ownerName = info[kCGWindowOwnerName as String] as? String ?? ""
+            return layer == 0 && ownerName != "VoiceInk" && !ownerName.contains("Dock") && !ownerName.contains("Menu Bar")
+        }) {
+            let title = frontWindow[kCGWindowName as String] as? String ?? "Unknown"
+            let ownerName = frontWindow[kCGWindowOwnerName as String] as? String ?? "Unknown"
+            let windowID = frontWindow[kCGWindowNumber as String] as? CGWindowID ?? 0
+            
+            return (title: title, ownerName: ownerName, windowID: windowID)
+        }
+        
+        return nil
+    }
+    
     func configureWindow(_ window: NSWindow) {
         window.styleMask = [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView]
         window.titlebarAppearsTransparent = true
@@ -38,7 +85,8 @@ class WindowManager {
     
     func createMainWindow(contentView: NSView) -> NSWindow {
         let defaultSize = NSSize(width: 940, height: 780)
-        let screenFrame = NSScreen.main?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1200, height: 800)
+        let activeScreen = detectActiveScreen()
+        let screenFrame = activeScreen?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1200, height: 800)
         let xPosition = (screenFrame.width - defaultSize.width) / 2 + screenFrame.minX
         let yPosition = (screenFrame.height - defaultSize.height) / 2 + screenFrame.minY
         

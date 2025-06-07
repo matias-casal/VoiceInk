@@ -108,7 +108,7 @@ class AudioTranscriptionService: ObservableObject {
                enhancementService.isConfigured {
                 do {
                     messageLog += "Enhancing transcription with AI...\n"
-                    let enhancedText = try await enhancementService.enhance(text)
+                    let enhancedText = try await enhancementService.enhance(text, duration: duration)
                     messageLog += "Enhancement completed.\n"
                     
                     let newTranscription = Transcription(

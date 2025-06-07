@@ -332,7 +332,7 @@ class WhisperState: NSObject, ObservableObject, AVAudioRecorderDelegate {
                     if shouldCancelRecording { return }
                     // Use processed text (without trigger words) for AI enhancement
                     let textForAI = promptDetectionResult?.processedText ?? text
-                    let enhancedText = try await enhancementService.enhance(textForAI)
+                    let enhancedText = try await enhancementService.enhance(textForAI, duration: actualDuration)
                     let newTranscription = Transcription(
                         text: originalText, 
                         duration: actualDuration,
