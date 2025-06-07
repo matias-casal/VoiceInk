@@ -4,6 +4,8 @@
 <dict>
 	<key>NSScreenCaptureUsageDescription</key>
 	<string>VoiceInk needs screen recording access to understand context from your screen for improved transcription accuracy.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>VoiceInk needs microphone access to record and transcribe your voice input.</string>
 	<key>SUEnableAutomaticChecks</key>
 	<true/>
 	<key>SUEnableInstallerLauncherService</key>

@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 77;
+	objectVersion = 90;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -35,14 +35,12 @@
 /* Begin PBXCopyFilesBuildPhase section */
 		E1C7A8132DE06FC70034EDA0 /* Embed Frameworks */ = {
 			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
 			dstPath = "";
-			dstSubfolderSpec = 10;
+			dstSubfolder = Frameworks;
 			files = (
 				E10340522DE1F666008BCBE5 /* whisper.xcframework in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
 
@@ -75,7 +73,6 @@
 /* Begin PBXFrameworksBuildPhase section */
 		E11473AD2CBE0F0A00318EE4 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 				E1ADD45A2CC5352A00303ECB /* LaunchAtLogin in Frameworks */,
 				E1ADD45F2CC544F100303ECB /* Sparkle in Frameworks */,
@@ -83,21 +80,16 @@
 				E10340512DE1F666008BCBE5 /* whisper.xcframework in Frameworks */,
 				E1F5FA7A2DA6CBF900B1FD8A /* Zip in Frameworks */,
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		E11473C02CBE0F0B00318EE4 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		E11473CA2CBE0F0B00318EE4 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
@@ -146,8 +138,6 @@
 			);
 			buildRules = (
 			);
-			dependencies = (
-			);
 			fileSystemSynchronizedGroups = (
 				E11473B22CBE0F0A00318EE4 /* VoiceInk */,
 			);
@@ -179,8 +169,6 @@
 				E11473C62CBE0F0B00318EE4 /* VoiceInkTests */,
 			);
 			name = VoiceInkTests;
-			packageProductDependencies = (
-			);
 			productName = VoiceInkTests;
 			productReference = E11473C32CBE0F0B00318EE4 /* VoiceInkTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
@@ -202,8 +190,6 @@
 				E11473D02CBE0F0B00318EE4 /* VoiceInkUITests */,
 			);
 			name = VoiceInkUITests;
-			packageProductDependencies = (
-			);
 			productName = VoiceInkUITests;
 			productReference = E11473CD2CBE0F0B00318EE4 /* VoiceInkUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
@@ -246,7 +232,7 @@
 				E1ADD45D2CC544F100303ECB /* XCRemoteSwiftPackageReference "Sparkle" */,
 				E1F5FA782DA6CBF900B1FD8A /* XCRemoteSwiftPackageReference "Zip" */,
 			);
-			preferredProjectObjectVersion = 77;
+			preferredProjectObjectVersion = 90;
 			productRefGroup = E11473B12CBE0F0A00318EE4 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -261,48 +247,36 @@
 /* Begin PBXResourcesBuildPhase section */
 		E11473AE2CBE0F0A00318EE4 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		E11473C12CBE0F0B00318EE4 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		E11473CB2CBE0F0B00318EE4 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		E11473AC2CBE0F0A00318EE4 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		E11473BF2CBE0F0B00318EE4 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		E11473C92CBE0F0B00318EE4 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
@@ -320,7 +294,7 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
-		E11473D52CBE0F0B00318EE4 /* Debug */ = {
+		E11473D52CBE0F0B00318EE4 /* Debug configuration for PBXProject "VoiceInk" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -383,7 +357,7 @@
 			};
 			name = Debug;
 		};
-		E11473D62CBE0F0B00318EE4 /* Release */ = {
+		E11473D62CBE0F0B00318EE4 /* Release configuration for PBXProject "VoiceInk" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -438,7 +412,7 @@
 			};
 			name = Release;
 		};
-		E11473D82CBE0F0B00318EE4 /* Debug */ = {
+		E11473D82CBE0F0B00318EE4 /* Debug configuration for PBXNativeTarget "VoiceInk" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ARCHS = "$(ARCHS_STANDARD)";
@@ -450,7 +424,7 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 130;
 				DEVELOPMENT_ASSET_PATHS = "\"VoiceInk/Preview Content\"";
-				DEVELOPMENT_TEAM = V6J6A3VWY2;
+				DEVELOPMENT_TEAM = LQCN9FPRRR;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -464,14 +438,14 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 1.30;
-				PRODUCT_BUNDLE_IDENTIFIER = com.prakashjoshipax.VoiceInk;
+				PRODUCT_BUNDLE_IDENTIFIER = com.bootweb.VoiceInk;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 			};
 			name = Debug;
 		};
-		E11473D92CBE0F0B00318EE4 /* Release */ = {
+		E11473D92CBE0F0B00318EE4 /* Release configuration for PBXNativeTarget "VoiceInk" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ARCHS = "$(ARCHS_STANDARD)";
@@ -483,7 +457,7 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 130;
 				DEVELOPMENT_ASSET_PATHS = "\"VoiceInk/Preview Content\"";
-				DEVELOPMENT_TEAM = V6J6A3VWY2;
+				DEVELOPMENT_TEAM = LQCN9FPRRR;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -497,14 +471,14 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 1.30;
-				PRODUCT_BUNDLE_IDENTIFIER = com.prakashjoshipax.VoiceInk;
+				PRODUCT_BUNDLE_IDENTIFIER = com.bootweb.VoiceInk;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 			};
 			name = Release;
 		};
-		E11473DB2CBE0F0B00318EE4 /* Debug */ = {
+		E11473DB2CBE0F0B00318EE4 /* Debug configuration for PBXNativeTarget "VoiceInkTests" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
@@ -514,7 +488,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.prakashjoshipax.VoiceInkTests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.bootweb.VoiceInkTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
@@ -522,7 +496,7 @@
 			};
 			name = Debug;
 		};
-		E11473DC2CBE0F0B00318EE4 /* Release */ = {
+		E11473DC2CBE0F0B00318EE4 /* Release configuration for PBXNativeTarget "VoiceInkTests" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
@@ -532,7 +506,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.prakashjoshipax.VoiceInkTests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.bootweb.VoiceInkTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
@@ -540,7 +514,7 @@
 			};
 			name = Release;
 		};
-		E11473DE2CBE0F0B00318EE4 /* Debug */ = {
+		E11473DE2CBE0F0B00318EE4 /* Debug configuration for PBXNativeTarget "VoiceInkUITests" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
@@ -548,7 +522,7 @@
 				DEVELOPMENT_TEAM = V6J6A3VWY2;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.prakashjoshipax.VoiceInkUITests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.bootweb.VoiceInkUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
@@ -556,7 +530,7 @@
 			};
 			name = Debug;
 		};
-		E11473DF2CBE0F0B00318EE4 /* Release */ = {
+		E11473DF2CBE0F0B00318EE4 /* Release configuration for PBXNativeTarget "VoiceInkUITests" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
@@ -564,7 +538,7 @@
 				DEVELOPMENT_TEAM = V6J6A3VWY2;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.prakashjoshipax.VoiceInkUITests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.bootweb.VoiceInkUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
@@ -578,37 +552,33 @@
 		E11473AB2CBE0F0A00318EE4 /* Build configuration list for PBXProject "VoiceInk" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				E11473D52CBE0F0B00318EE4 /* Debug */,
-				E11473D62CBE0F0B00318EE4 /* Release */,
+				E11473D52CBE0F0B00318EE4 /* Debug configuration for PBXProject "VoiceInk" */,
+				E11473D62CBE0F0B00318EE4 /* Release configuration for PBXProject "VoiceInk" */,
 			);
-			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 		E11473D72CBE0F0B00318EE4 /* Build configuration list for PBXNativeTarget "VoiceInk" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				E11473D82CBE0F0B00318EE4 /* Debug */,
-				E11473D92CBE0F0B00318EE4 /* Release */,
+				E11473D82CBE0F0B00318EE4 /* Debug configuration for PBXNativeTarget "VoiceInk" */,
+				E11473D92CBE0F0B00318EE4 /* Release configuration for PBXNativeTarget "VoiceInk" */,
 			);
-			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 		E11473DA2CBE0F0B00318EE4 /* Build configuration list for PBXNativeTarget "VoiceInkTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				E11473DB2CBE0F0B00318EE4 /* Debug */,
-				E11473DC2CBE0F0B00318EE4 /* Release */,
+				E11473DB2CBE0F0B00318EE4 /* Debug configuration for PBXNativeTarget "VoiceInkTests" */,
+				E11473DC2CBE0F0B00318EE4 /* Release configuration for PBXNativeTarget "VoiceInkTests" */,
 			);
-			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 		E11473DD2CBE0F0B00318EE4 /* Build configuration list for PBXNativeTarget "VoiceInkUITests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				E11473DE2CBE0F0B00318EE4 /* Debug */,
-				E11473DF2CBE0F0B00318EE4 /* Release */,
+				E11473DE2CBE0F0B00318EE4 /* Debug configuration for PBXNativeTarget "VoiceInkUITests" */,
+				E11473DF2CBE0F0B00318EE4 /* Release configuration for PBXNativeTarget "VoiceInkUITests" */,
 			);
-			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
