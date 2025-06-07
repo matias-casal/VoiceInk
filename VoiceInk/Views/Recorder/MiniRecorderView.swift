@@ -65,22 +65,36 @@ struct MiniRecorderView: View {
                             .frame(maxWidth: .infinity)
                             .padding(.horizontal, 8)
                             
-                            // Power Mode Button - on the right
-                            NotchToggleButton(
-                                isEnabled: powerModeManager.isPowerModeEnabled,
-                                icon: powerModeManager.currentActiveConfiguration.emoji,
-                                color: .orange,
-                                disabled: !powerModeManager.isPowerModeEnabled
-                            ) {
-                                if powerModeManager.isPowerModeEnabled {
-                                    showPowerModePopover.toggle()
+                            // Right side buttons group
+                            HStack(spacing: 6) {
+                                // Enhancement Button
+                                if let enhancementService = whisperState.enhancementService {
+                                    EnhancementToggleButton(
+                                        isEnabled: enhancementService.isEnhancementEnabled,
+                                        isConfigured: enhancementService.isConfigured
+                                    ) {
+                                        enhancementService.isEnhancementEnabled.toggle()
+                                    }
+                                    .frame(width: 24)
+                                }
+                                
+                                // Power Mode Button
+                                NotchToggleButton(
+                                    isEnabled: powerModeManager.isPowerModeEnabled,
+                                    icon: powerModeManager.currentActiveConfiguration.emoji,
+                                    color: .orange,
+                                    disabled: !powerModeManager.isPowerModeEnabled
+                                ) {
+                                    if powerModeManager.isPowerModeEnabled {
+                                        showPowerModePopover.toggle()
+                                    }
+                                }
+                                .frame(width: 24)
+                                .popover(isPresented: $showPowerModePopover, arrowEdge: .bottom) {
+                                    PowerModePopover()
                                 }
                             }
-                            .frame(width: 24)
                             .padding(.trailing, 8)
-                            .popover(isPresented: $showPowerModePopover, arrowEdge: .bottom) {
-                                PowerModePopover()
-                            }
                         }
                         .padding(.vertical, 8)
                     }
@@ -89,5 +103,6 @@ struct MiniRecorderView: View {
         }
     }
 }
+
 
 

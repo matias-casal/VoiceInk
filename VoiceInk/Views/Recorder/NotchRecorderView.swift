@@ -47,6 +47,17 @@ struct NotchRecorderView: View {
                         }
                         .frame(width: 22)
                         
+                        // Enhancement Button
+                        if let enhancementService = whisperState.enhancementService {
+                            EnhancementToggleButton(
+                                isEnabled: enhancementService.isEnhancementEnabled,
+                                isConfigured: enhancementService.isConfigured
+                            ) {
+                                enhancementService.isEnhancementEnabled.toggle()
+                            }
+                            .frame(width: 22)
+                        }
+                        
                         // Power Mode Button - moved from right side
                         NotchToggleButton(
                             isEnabled: powerModeManager.isPowerModeEnabled,
@@ -65,7 +76,7 @@ struct NotchRecorderView: View {
                         
                         Spacer()
                     }
-                    .frame(width: 64) // Increased width for both controls
+                    .frame(width: 90) // Increased width for three controls
                     .padding(.leading, 16)
                     
                     // Center section with exact notch width
