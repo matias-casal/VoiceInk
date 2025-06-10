@@ -319,6 +319,16 @@ class WhisperState: NSObject, ObservableObject, AVAudioRecorderDelegate {
             var promptDetectionResult: PromptDetectionService.PromptDetectionResult? = nil
             let originalText = text 
             
+            // First clipboard copy: Raw transcription text (for external program storage)
+            if isAutoCopyEnabled {
+                let rawCopySuccess = ClipboardManager.copyToClipboard(originalText.trimmingCharacters(in: .whitespacesAndNewlines) + " ")
+                if rawCopySuccess {
+                    logger.notice("📋 Raw transcription copied to clipboard (first copy)")
+                } else {
+                    logger.error("❌ Failed to copy raw transcription to clipboard")
+                }
+            }
+            
             if let enhancementService = enhancementService, enhancementService.isConfigured {
                 let detectionResult = promptDetectionService.analyzeText(text, with: enhancementService)
                 promptDetectionResult = detectionResult
@@ -376,13 +386,20 @@ class WhisperState: NSObject, ObservableObject, AVAudioRecorderDelegate {
                     CursorPaster.pasteAtCursor(text)
                 }
             }
-            if isAutoCopyEnabled {
+            
+            // Second clipboard copy: Enhanced text (only if AI enhancement was applied)
+            if isAutoCopyEnabled && enhancementService?.isEnhancementEnabled == true && text != originalText {
                 let success = ClipboardManager.copyToClipboard(text)
                 if success {
-                    clipboardMessage = "Transcription copied to clipboard"
+                    clipboardMessage = "Enhanced transcription copied to clipboard"
+                    logger.notice("📋 Enhanced transcription copied to clipboard (second copy)")
                 } else {
-                    clipboardMessage = "Failed to copy to clipboard"
+                    clipboardMessage = "Failed to copy enhanced transcription to clipboard"
+                    logger.error("❌ Failed to copy enhanced transcription to clipboard")
                 }
+            } else if isAutoCopyEnabled && (enhancementService?.isEnhancementEnabled != true || text == originalText) {
+                // If enhancement is disabled or text wasn't enhanced, update clipboard message accordingly
+                clipboardMessage = "Raw transcription copied to clipboard"
             }
             try? FileManager.default.removeItem(at: url)
             
