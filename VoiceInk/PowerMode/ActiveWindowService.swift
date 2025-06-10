@@ -116,20 +116,35 @@ class ActiveWindowService: ObservableObject {
         }
         
         if let whisperState = self.whisperState,
-           let modelName = config.selectedWhisperModel {
-            let models = await MainActor.run { whisperState.availableModels }
-            if let selectedModel = models.first(where: { $0.name == modelName }) {
+           let modelName = config.selectedTranscriptionModelName,
+           let selectedModel = await whisperState.allAvailableModels.first(where: { $0.name == modelName }) {
+            
+            let currentModelName = await MainActor.run { whisperState.currentTranscriptionModel?.name }
+            
+            // Only change the model if it's different from the current one.
+            if currentModelName != modelName {
+                // Set the new model as default. This works for both local and cloud models.
+                await whisperState.setDefaultTranscriptionModel(selectedModel)
                 
-                let currentModelName = await MainActor.run { whisperState.currentModel?.name }
-                if currentModelName != modelName {
-                    await whisperState.setDefaultModel(selectedModel)
+                // The cleanup and load cycle is only necessary for local models.
+                if selectedModel.provider == ModelProvider.local {
+                    // Unload any previously loaded model to free up memory.
                     await whisperState.cleanupModelResources()
                     
-                    do {
-                        try await whisperState.loadModel(selectedModel)
-                    } catch {
-                        
+                    // Load the new local model into memory.
+                    if let localModel = await whisperState.availableModels.first(where: { $0.name == selectedModel.name }) {
+                        do {
+                            try await whisperState.loadModel(localModel)
+                            logger.info("✅ Power Mode: Successfully loaded local model '\(localModel.name)'.")
+                        } catch {
+                            logger.error("❌ Power Mode: Failed to load local model '\(localModel.name)': \(error.localizedDescription)")
+                        }
                     }
+                } else {
+                    // For cloud models, no in-memory loading is needed, but we should still
+                    // clean up if the *previous* model was a local one.
+                    await whisperState.cleanupModelResources()
+                    logger.info("✅ Power Mode: Switched to cloud model '\(selectedModel.name)'. No local load needed.")
                 }
             }
         }

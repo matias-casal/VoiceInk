@@ -26,23 +26,18 @@ struct LanguageSelectionView: View {
     
     // Function to check if current model is multilingual
     private func isMultilingualModel() -> Bool {
-        guard let currentModel = whisperState.currentModel,
-               let predefinedModel = PredefinedModels.models.first(where: { $0.name == currentModel.name }) else {
+        guard let currentModel = whisperState.currentTranscriptionModel else {
             return false
         }
-        return predefinedModel.isMultilingualModel
+        return currentModel.isMultilingualModel
     }
 
     // Function to get current model's supported languages
     private func getCurrentModelLanguages() -> [String: String] {
-        guard let currentModel = whisperState.currentModel,
-              let predefinedModel = PredefinedModels.models.first(where: {
-                  $0.name == currentModel.name
-              })
-        else {
+        guard let currentModel = whisperState.currentTranscriptionModel else {
             return ["en": "English"] // Default to English if no model found
         }
-        return predefinedModel.supportedLanguages
+        return currentModel.supportedLanguages
     }
 
     // Get the display name of the current language
@@ -74,16 +69,13 @@ struct LanguageSelectionView: View {
             Text("Transcription Language")
                 .font(.headline)
 
-            if let currentModel = whisperState.currentModel,
-               let predefinedModel = PredefinedModels.models.first(where: {
-                   $0.name == currentModel.name
-               })
+            if let currentModel = whisperState.currentTranscriptionModel
             {
                 if isMultilingualModel() {
                     VStack(alignment: .leading, spacing: 8) {
                         Picker("Select Language", selection: $selectedLanguage) {
                             ForEach(
-                                predefinedModel.supportedLanguages.sorted(by: {
+                                currentModel.supportedLanguages.sorted(by: {
                                     if $0.key == "auto" { return true }
                                     if $1.key == "auto" { return false }
                                     return $0.value < $1.value
@@ -97,7 +89,7 @@ struct LanguageSelectionView: View {
                             updateLanguage(newValue)
                         }
 
-                        Text("Current model: \(predefinedModel.displayName)")
+                        Text("Current model: \(currentModel.displayName)")
                             .font(.caption)
                             .foregroundColor(.secondary)
 
@@ -114,7 +106,7 @@ struct LanguageSelectionView: View {
                             .font(.subheadline)
                             .foregroundColor(.primary)
 
-                        Text("Current model: \(predefinedModel.displayName)")
+                        Text("Current model: \(currentModel.displayName)")
                             .font(.caption)
                             .foregroundColor(.secondary)
 

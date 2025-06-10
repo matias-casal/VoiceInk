@@ -173,4 +173,47 @@ class AudioProcessor {
         logger.notice("✅ Successfully converted \(samples.count) samples")
         return samples
     }
+    func saveSamplesAsWav(samples: [Float], to url: URL) throws {
+        let outputFormat = AVAudioFormat(
+            commonFormat: .pcmFormatInt16,
+            sampleRate: AudioFormat.targetSampleRate,
+            channels: AudioFormat.targetChannels,
+            interleaved: true
+        )
+
+        guard let outputFormat = outputFormat else {
+            throw AudioProcessingError.unsupportedFormat
+        }
+
+        let buffer = AVAudioPCMBuffer(
+            pcmFormat: outputFormat,
+            frameCapacity: AVAudioFrameCount(samples.count)
+        )
+        
+        guard let buffer = buffer else {
+            throw AudioProcessingError.conversionFailed
+        }
+        
+        // Convert float samples to int16
+        let int16Samples = samples.map { max(-1.0, min(1.0, $0)) * Float(Int16.max) }.map { Int16($0) }
+
+        // Copy samples to buffer
+        int16Samples.withUnsafeBufferPointer { int16Buffer in
+            let int16Pointer = int16Buffer.baseAddress!
+            buffer.int16ChannelData![0].update(from: int16Pointer, count: int16Samples.count)
+        }
+        buffer.frameLength = AVAudioFrameCount(samples.count)
+
+        // Create audio file
+        let audioFile = try AVAudioFile(
+            forWriting: url,
+            settings: outputFormat.settings,
+            commonFormat: .pcmFormatInt16,
+            interleaved: true
+        )
+
+        try audioFile.write(from: buffer)
+        logger.notice("✅ Successfully saved processed audio to \(url.lastPathComponent)")
+    }
 } 
+

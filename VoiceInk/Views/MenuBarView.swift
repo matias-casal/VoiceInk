@@ -80,24 +80,19 @@ struct MenuBarView: View {
             }
             
             Menu {
-                ForEach(whisperState.availableModels) { model in
+                ForEach(whisperState.usableModels, id: \.id) { model in
                     Button {
                         Task {
-                            await whisperState.setDefaultModel(model)
+                            await whisperState.setDefaultTranscriptionModel(model)
                         }
                     } label: {
                         HStack {
-                            Text(PredefinedModels.models.first { $0.name == model.name }?.displayName ?? model.name)
-                            if whisperState.currentModel?.name == model.name {
+                            Text(model.displayName)
+                            if whisperState.currentTranscriptionModel?.id == model.id {
                                 Image(systemName: "checkmark")
                             }
                         }
                     }
-                }
-                
-                if whisperState.availableModels.isEmpty {
-                    Text("No models downloaded")
-                        .foregroundColor(.secondary)
                 }
                 
                 Divider()
@@ -107,7 +102,7 @@ struct MenuBarView: View {
                 }
             } label: {
                 HStack {
-                    Text("Model: \(PredefinedModels.models.first { $0.name == whisperState.currentModel?.name }?.displayName ?? "None")")
+                    Text("Model: \(whisperState.currentTranscriptionModel?.displayName ?? "None")")
                     Image(systemName: "chevron.up.chevron.down")
                         .font(.system(size: 10))
                 }

@@ -44,7 +44,7 @@ struct APIKeyManagementView: View {
             
             // Provider Selection
             Picker("AI Provider", selection: $aiService.selectedProvider) {
-                ForEach(AIProvider.allCases, id: \.self) { provider in
+                ForEach(AIProvider.allCases.filter { $0 != .elevenLabs }, id: \.self) { provider in
                     Text(provider.rawValue).tag(provider)
                 }
             }
@@ -385,6 +385,8 @@ struct APIKeyManagementView: View {
                                             URL(string: "https://console.anthropic.com/settings/keys")!
                                         case .mistral:
                                             URL(string: "https://console.mistral.ai/api-keys")!
+                                        case .elevenLabs:
+                                            URL(string: "https://elevenlabs.io/speech-synthesis")!
                                         case .ollama, .custom:
                                             URL(string: "")! // This case should never be reached
                                         }

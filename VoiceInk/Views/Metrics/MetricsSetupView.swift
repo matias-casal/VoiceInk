@@ -12,7 +12,7 @@ struct MetricsSetupView: View {
                 VStack(spacing: geometry.size.height * 0.05) {
                     // Header
                     VStack(spacing: geometry.size.height * 0.02) {
-                        AppIconView(size: min(90, geometry.size.width * 0.15), cornerRadius: 22)
+                        AppIconView()
                         
                         VStack(spacing: geometry.size.height * 0.01) {
                             Text("Welcome to VoiceInk")
@@ -78,7 +78,7 @@ struct MetricsSetupView: View {
             title = "Enable Screen Recording"
             description = "Allow VoiceInk to understand context from your screen for transcript  Enhancement"
         default:
-            isCompleted = whisperState.currentModel != nil
+            isCompleted = whisperState.currentTranscriptionModel != nil
             icon = "arrow.down"
             title = "Download Model"
             description = "Choose and download an AI model"

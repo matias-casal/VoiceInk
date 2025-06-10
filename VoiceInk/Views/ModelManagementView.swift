@@ -39,9 +39,7 @@ struct ModelManagementView: View {
             Text("Default Model")
                 .font(.headline)
                 .foregroundColor(.secondary)
-            Text(whisperState.currentModel.flatMap { model in
-                PredefinedModels.models.first { $0.name == model.name }?.displayName
-            } ?? "No model selected")
+            Text(whisperState.currentTranscriptionModel?.displayName ?? "No model selected")
                 .font(.title2)
                 .fontWeight(.bold)
         }
@@ -62,7 +60,7 @@ struct ModelManagementView: View {
                     .font(.title3)
                     .fontWeight(.semibold)
                 
-                Text("(\(whisperState.predefinedModels.count))")
+                Text("(\(whisperState.allAvailableModels.count))")
                     .foregroundColor(.secondary)
                     .font(.subheadline)
                 
@@ -70,11 +68,11 @@ struct ModelManagementView: View {
             }
             
             VStack(spacing: 12) {
-                ForEach(whisperState.predefinedModels) { model in
+                ForEach(whisperState.allAvailableModels, id: \.id) { model in
                     ModelCardRowView(
                         model: model,
                         isDownloaded: whisperState.availableModels.contains { $0.name == model.name },
-                        isCurrent: whisperState.currentModel?.name == model.name,
+                        isCurrent: whisperState.currentTranscriptionModel?.name == model.name,
                         downloadProgress: whisperState.downloadProgress,
                         modelURL: whisperState.availableModels.first { $0.name == model.name }?.url,
                         deleteAction: {
@@ -83,15 +81,15 @@ struct ModelManagementView: View {
                             }
                         },
                         setDefaultAction: {
-                            if let downloadedModel = whisperState.availableModels.first(where: { $0.name == model.name }) {
-                                Task {
-                                    await whisperState.setDefaultModel(downloadedModel)
-                                }
+                            Task {
+                                await whisperState.setDefaultTranscriptionModel(model)
                             }
                         },
                         downloadAction: {
-                            Task {
-                                await whisperState.downloadModel(model)
+                            if let localModel = model as? LocalModel {
+                                Task {
+                                    await whisperState.downloadModel(localModel)
+                                }
                             }
                         }
                     )

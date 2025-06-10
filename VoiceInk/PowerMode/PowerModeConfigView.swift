@@ -16,7 +16,7 @@ struct ConfigurationView: View {
     @State private var isShowingAppPicker = false
     @State private var isAIEnhancementEnabled: Bool
     @State private var selectedPromptId: UUID?
-    @State private var selectedWhisperModelName: String?
+    @State private var selectedTranscriptionModelName: String?
     @State private var selectedLanguage: String?
     @State private var installedApps: [(url: URL, name: String, bundleId: String, icon: NSImage)] = []
     @State private var searchText = ""
@@ -56,10 +56,10 @@ struct ConfigurationView: View {
     
     // Simplified computed property for effective model name
     private var effectiveModelName: String? {
-        if let model = selectedWhisperModelName {
+        if let model = selectedTranscriptionModelName {
             return model
         }
-        return whisperState.currentModel?.name ?? whisperState.availableModels.first?.name
+        return whisperState.currentTranscriptionModel?.name
     }
     
     init(mode: ConfigurationMode, powerModeManager: PowerModeManager) {
@@ -71,7 +71,7 @@ struct ConfigurationView: View {
         case .add:
             _isAIEnhancementEnabled = State(initialValue: true)
             _selectedPromptId = State(initialValue: nil)
-            _selectedWhisperModelName = State(initialValue: nil)
+            _selectedTranscriptionModelName = State(initialValue: nil)
             _selectedLanguage = State(initialValue: nil)
             _configName = State(initialValue: "")
             _selectedEmoji = State(initialValue: "✏️")
@@ -84,7 +84,7 @@ struct ConfigurationView: View {
             let latestConfig = powerModeManager.getConfiguration(with: config.id) ?? config
             _isAIEnhancementEnabled = State(initialValue: latestConfig.isAIEnhancementEnabled)
             _selectedPromptId = State(initialValue: latestConfig.selectedPrompt.flatMap { UUID(uuidString: $0) })
-            _selectedWhisperModelName = State(initialValue: latestConfig.selectedWhisperModel)
+            _selectedTranscriptionModelName = State(initialValue: latestConfig.selectedTranscriptionModelName)
             _selectedLanguage = State(initialValue: latestConfig.selectedLanguage)
             _configName = State(initialValue: latestConfig.name)
             _selectedEmoji = State(initialValue: latestConfig.emoji)
@@ -98,7 +98,7 @@ struct ConfigurationView: View {
             let latestConfig = powerModeManager.defaultConfig
             _isAIEnhancementEnabled = State(initialValue: latestConfig.isAIEnhancementEnabled)
             _selectedPromptId = State(initialValue: latestConfig.selectedPrompt.flatMap { UUID(uuidString: $0) })
-            _selectedWhisperModelName = State(initialValue: latestConfig.selectedWhisperModel)
+            _selectedTranscriptionModelName = State(initialValue: latestConfig.selectedTranscriptionModelName)
             _selectedLanguage = State(initialValue: latestConfig.selectedLanguage)
             _configName = State(initialValue: latestConfig.name)
             _selectedEmoji = State(initialValue: latestConfig.emoji)
@@ -364,9 +364,9 @@ struct ConfigurationView: View {
                             // Create a simple binding that uses current model if nil
                             let modelBinding = Binding<String?>(
                                 get: {
-                                    selectedWhisperModelName ?? whisperState.currentModel?.name ?? whisperState.availableModels.first?.name
+                                    selectedTranscriptionModelName ?? whisperState.usableModels.first?.name
                                 },
-                                set: { selectedWhisperModelName = $0 }
+                                set: { selectedTranscriptionModelName = $0 }
                             )
                             
                             HStack {
@@ -375,9 +375,8 @@ struct ConfigurationView: View {
                                     .foregroundColor(.secondary)
                                 
                                 Picker("", selection: modelBinding) {
-                                    ForEach(whisperState.availableModels) { model in
-                                        let displayName = whisperState.predefinedModels.first { $0.name == model.name }?.displayName ?? model.name
-                                        Text(displayName).tag(model.name as String?)
+                                    ForEach(whisperState.usableModels, id: \.name) { model in
+                                        Text(model.displayName).tag(model.name as String?)
                                     }
                                 }
                                 .labelsHidden()
@@ -387,7 +386,7 @@ struct ConfigurationView: View {
                         
                         // Language Selection Subsection
                         if let selectedModel = effectiveModelName,
-                           let modelInfo = whisperState.predefinedModels.first(where: { $0.name == selectedModel }),
+                           let modelInfo = whisperState.allAvailableModels.first(where: { $0.name == selectedModel }),
                            modelInfo.isMultilingualModel {
                             
                             // Create a simple binding that uses UserDefaults language if nil
@@ -416,7 +415,7 @@ struct ConfigurationView: View {
                                 .frame(maxWidth: .infinity)
                             }
                         } else if let selectedModel = effectiveModelName,
-                                  let modelInfo = whisperState.predefinedModels.first(where: { $0.name == selectedModel }),
+                                  let modelInfo = whisperState.allAvailableModels.first(where: { $0.name == selectedModel }),
                                   !modelInfo.isMultilingualModel {
                             // Silently set to English without showing UI
                             EmptyView()
@@ -488,7 +487,7 @@ struct ConfigurationView: View {
                                         .frame(maxWidth: .infinity, alignment: .leading)
                                 } else {
                                     Picker("", selection: providerBinding) {
-                                        ForEach(aiService.connectedProviders, id: \.self) { provider in
+                                        ForEach(aiService.connectedProviders.filter { $0 != .elevenLabs }, id: \.self) { provider in
                                             Text(provider.rawValue).tag(provider)
                                         }
                                     }
@@ -669,7 +668,7 @@ struct ConfigurationView: View {
                 urlConfigs: websiteConfigs.isEmpty ? nil : websiteConfigs,
                     isAIEnhancementEnabled: isAIEnhancementEnabled,
                     selectedPrompt: selectedPromptId?.uuidString,
-                    selectedWhisperModel: selectedWhisperModelName,
+                    selectedTranscriptionModelName: selectedTranscriptionModelName,
                     selectedLanguage: selectedLanguage,
                     useScreenCapture: useScreenCapture,
                     selectedAIProvider: selectedAIProvider,
@@ -681,7 +680,7 @@ struct ConfigurationView: View {
             updatedConfig.emoji = selectedEmoji
             updatedConfig.isAIEnhancementEnabled = isAIEnhancementEnabled
             updatedConfig.selectedPrompt = selectedPromptId?.uuidString
-            updatedConfig.selectedWhisperModel = selectedWhisperModelName
+            updatedConfig.selectedTranscriptionModelName = selectedTranscriptionModelName
             updatedConfig.selectedLanguage = selectedLanguage
             updatedConfig.appConfigs = selectedAppConfigs.isEmpty ? nil : selectedAppConfigs
             updatedConfig.urlConfigs = websiteConfigs.isEmpty ? nil : websiteConfigs
@@ -696,7 +695,7 @@ struct ConfigurationView: View {
             updatedConfig.emoji = selectedEmoji
             updatedConfig.isAIEnhancementEnabled = isAIEnhancementEnabled
             updatedConfig.selectedPrompt = selectedPromptId?.uuidString
-            updatedConfig.selectedWhisperModel = selectedWhisperModelName
+            updatedConfig.selectedTranscriptionModelName = selectedTranscriptionModelName
             updatedConfig.selectedLanguage = selectedLanguage
             updatedConfig.useScreenCapture = useScreenCapture
             updatedConfig.selectedAIProvider = selectedAIProvider

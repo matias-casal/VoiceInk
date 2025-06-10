@@ -8,15 +8,22 @@ struct PowerModeConfig: Codable, Identifiable, Equatable {
     var urlConfigs: [URLConfig]?
     var isAIEnhancementEnabled: Bool
     var selectedPrompt: String?
-    var selectedWhisperModel: String?
+    var selectedTranscriptionModelName: String?
     var selectedLanguage: String?
     var useScreenCapture: Bool
     var selectedAIProvider: String?
     var selectedAIModel: String?
+        
+    // Custom coding keys to handle migration from selectedWhisperModel
+    enum CodingKeys: String, CodingKey {
+        case id, name, emoji, appConfigs, urlConfigs, isAIEnhancementEnabled, selectedPrompt, selectedLanguage, useScreenCapture, selectedAIProvider, selectedAIModel
+        case selectedWhisperModel // Old key
+        case selectedTranscriptionModelName // New key
+    }
     
-    init(id: UUID = UUID(), name: String, emoji: String, appConfigs: [AppConfig]? = nil, 
+    init(id: UUID = UUID(), name: String, emoji: String, appConfigs: [AppConfig]? = nil,
          urlConfigs: [URLConfig]? = nil, isAIEnhancementEnabled: Bool, selectedPrompt: String? = nil,
-         selectedWhisperModel: String? = nil, selectedLanguage: String? = nil, useScreenCapture: Bool = false,
+         selectedTranscriptionModelName: String? = nil, selectedLanguage: String? = nil, useScreenCapture: Bool = false,
          selectedAIProvider: String? = nil, selectedAIModel: String? = nil) {
         self.id = id
         self.name = name
@@ -28,9 +35,49 @@ struct PowerModeConfig: Codable, Identifiable, Equatable {
         self.useScreenCapture = useScreenCapture
         self.selectedAIProvider = selectedAIProvider ?? UserDefaults.standard.string(forKey: "selectedAIProvider")
         self.selectedAIModel = selectedAIModel
-        self.selectedWhisperModel = selectedWhisperModel ?? UserDefaults.standard.string(forKey: "CurrentModel")
+        self.selectedTranscriptionModelName = selectedTranscriptionModelName ?? UserDefaults.standard.string(forKey: "CurrentTranscriptionModel")
         self.selectedLanguage = selectedLanguage ?? UserDefaults.standard.string(forKey: "SelectedLanguage") ?? "en"
     }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        name = try container.decode(String.self, forKey: .name)
+        emoji = try container.decode(String.self, forKey: .emoji)
+        appConfigs = try container.decodeIfPresent([AppConfig].self, forKey: .appConfigs)
+        urlConfigs = try container.decodeIfPresent([URLConfig].self, forKey: .urlConfigs)
+        isAIEnhancementEnabled = try container.decode(Bool.self, forKey: .isAIEnhancementEnabled)
+        selectedPrompt = try container.decodeIfPresent(String.self, forKey: .selectedPrompt)
+        selectedLanguage = try container.decodeIfPresent(String.self, forKey: .selectedLanguage)
+        useScreenCapture = try container.decode(Bool.self, forKey: .useScreenCapture)
+        selectedAIProvider = try container.decodeIfPresent(String.self, forKey: .selectedAIProvider)
+        selectedAIModel = try container.decodeIfPresent(String.self, forKey: .selectedAIModel)
+
+        if let newModelName = try container.decodeIfPresent(String.self, forKey: .selectedTranscriptionModelName) {
+            selectedTranscriptionModelName = newModelName
+        } else if let oldModelName = try container.decodeIfPresent(String.self, forKey: .selectedWhisperModel) {
+            selectedTranscriptionModelName = oldModelName
+        } else {
+            selectedTranscriptionModelName = nil
+        }
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(name, forKey: .name)
+        try container.encode(emoji, forKey: .emoji)
+        try container.encodeIfPresent(appConfigs, forKey: .appConfigs)
+        try container.encodeIfPresent(urlConfigs, forKey: .urlConfigs)
+        try container.encode(isAIEnhancementEnabled, forKey: .isAIEnhancementEnabled)
+        try container.encodeIfPresent(selectedPrompt, forKey: .selectedPrompt)
+        try container.encodeIfPresent(selectedLanguage, forKey: .selectedLanguage)
+        try container.encode(useScreenCapture, forKey: .useScreenCapture)
+        try container.encodeIfPresent(selectedAIProvider, forKey: .selectedAIProvider)
+        try container.encodeIfPresent(selectedAIModel, forKey: .selectedAIModel)
+        try container.encodeIfPresent(selectedTranscriptionModelName, forKey: .selectedTranscriptionModelName)
+    }
+    
     
     static func == (lhs: PowerModeConfig, rhs: PowerModeConfig) -> Bool {
         lhs.id == rhs.id
@@ -96,7 +143,7 @@ class PowerModeManager: ObservableObject {
             defaultConfig = config
         } else {
             // Get default values from UserDefaults if available
-            let defaultModelName = UserDefaults.standard.string(forKey: "CurrentModel")
+            let defaultModelName = UserDefaults.standard.string(forKey: "CurrentTranscriptionModel")
             let defaultLanguage = UserDefaults.standard.string(forKey: "SelectedLanguage") ?? "en"
             
             defaultConfig = PowerModeConfig(
@@ -105,7 +152,7 @@ class PowerModeManager: ObservableObject {
                 emoji: "⚙️",
                 isAIEnhancementEnabled: false,
                 selectedPrompt: nil,
-                selectedWhisperModel: defaultModelName,
+                selectedTranscriptionModelName: defaultModelName,
                 selectedLanguage: defaultLanguage
             )
             saveDefaultConfig()

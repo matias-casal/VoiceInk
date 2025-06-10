@@ -9,7 +9,7 @@ struct OnboardingModelDownloadView: View {
     @State private var isModelSet = false
     @State private var showTutorial = false
     
-    private let turboModel = PredefinedModels.models.first { $0.name == "ggml-large-v3-turbo-q5_0" }!
+    private let turboModel = PredefinedModels.models.first { $0.name == "ggml-large-v3-turbo-q5_0" } as! LocalModel
     
     var body: some View {
         ZStack {
@@ -149,8 +149,8 @@ struct OnboardingModelDownloadView: View {
     }
     
     private func checkModelStatus() {
-        if let model = whisperState.availableModels.first(where: { $0.name == turboModel.name }) {
-            isModelSet = whisperState.currentModel?.name == model.name
+        if whisperState.availableModels.contains(where: { $0.name == turboModel.name }) {
+            isModelSet = whisperState.currentTranscriptionModel?.name == turboModel.name
         }
     }
     
@@ -159,11 +159,13 @@ struct OnboardingModelDownloadView: View {
             withAnimation {
                 showTutorial = true
             }
-        } else if let model = whisperState.availableModels.first(where: { $0.name == turboModel.name }) {
-            Task {
-                await whisperState.setDefaultModel(model)
-                withAnimation {
-                    isModelSet = true
+        } else if whisperState.availableModels.contains(where: { $0.name == turboModel.name }) {
+            if let modelToSet = whisperState.allAvailableModels.first(where: { $0.name == turboModel.name }) {
+                Task {
+                    await whisperState.setDefaultTranscriptionModel(modelToSet)
+                    withAnimation {
+                        isModelSet = true
+                    }
                 }
             }
         } else {
@@ -172,8 +174,8 @@ struct OnboardingModelDownloadView: View {
             }
             Task {
                 await whisperState.downloadModel(turboModel)
-                if let model = whisperState.availableModels.first(where: { $0.name == turboModel.name }) {
-                    await whisperState.setDefaultModel(model)
+                if let modelToSet = whisperState.allAvailableModels.first(where: { $0.name == turboModel.name }) {
+                    await whisperState.setDefaultTranscriptionModel(modelToSet)
                     withAnimation {
                         isModelSet = true
                         isDownloading = false

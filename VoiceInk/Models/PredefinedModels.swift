@@ -1,6 +1,6 @@
 import Foundation
  
- struct PredefinedModel: Identifiable, Hashable {
+ struct LocalModel: TranscriptionModel {
      let id = UUID()
      let name: String
      let displayName: String
@@ -11,6 +11,7 @@ import Foundation
      let accuracy: Double
      let ramUsage: Double
      let hash: String
+     let provider: ModelProvider = .local
  
      var downloadURL: String {
          "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/\(filename)"
@@ -20,20 +21,8 @@ import Foundation
          "\(name).bin"
      }
  
-     func hash(into hasher: inout Hasher) {
-         hasher.combine(id)
-     }
- 
-     static func == (lhs: PredefinedModel, rhs: PredefinedModel) -> Bool {
-         lhs.id == rhs.id
-     }
- 
      var isMultilingualModel: Bool {
          supportedLanguages.count > 1
-     }
- 
-     var language: String {
-         isMultilingualModel ? "Multilingual" : "English-only"
      }
  }
  
@@ -53,8 +42,9 @@ import Foundation
          }
      }
  
-     static let models: [PredefinedModel] = [
-         PredefinedModel(
+     static let models: [any TranscriptionModel] = [
+         // Local Models
+         LocalModel(
              name: "ggml-tiny",
              displayName: "Tiny",
              size: "75 MiB",
@@ -65,7 +55,7 @@ import Foundation
              ramUsage: 0.3,
              hash: "bd577a113a864445d4c299885e0cb97d4ba92b5f"
          ),
-         PredefinedModel(
+         LocalModel(
              name: "ggml-tiny.en",
              displayName: "Tiny (English)",
              size: "75 MiB",
@@ -76,7 +66,7 @@ import Foundation
              ramUsage: 0.3,
              hash: "c78c86eb1a8faa21b369bcd33207cc90d64ae9df"
          ),
-         PredefinedModel(
+         LocalModel(
              name: "ggml-base.en",
              displayName: "Base (English)",
              size: "142 MiB",
@@ -87,7 +77,7 @@ import Foundation
              ramUsage: 0.5,
              hash: "137c40403d78fd54d454da0f9bd998f78703390c"
          ),
-         PredefinedModel(
+         LocalModel(
              name: "ggml-large-v2",
              displayName: "Large v2",
              size: "2.9 GiB",
@@ -98,7 +88,7 @@ import Foundation
              ramUsage: 3.8,
              hash: "0f4c8e30f21cf1769f637135f521436792c48186"
          ),
-         PredefinedModel(
+         LocalModel(
              name: "ggml-large-v3",
              displayName: "Large v3",
              size: "2.9 GiB",
@@ -109,7 +99,7 @@ import Foundation
              ramUsage: 3.9,
              hash: "ad82bf6a9043ceed055076d0fd39f5f186ff8062"
          ),
-         PredefinedModel(
+         LocalModel(
              name: "ggml-large-v3-turbo",
              displayName: "Large v3 Turbo",
              size: "1.5 GiB",
@@ -121,7 +111,7 @@ import Foundation
              ramUsage: 1.8,
              hash: "4af2b29d7ec73d781377bfd1758ca957a807e941"
          ),
-         PredefinedModel(
+         LocalModel(
              name: "ggml-large-v3-turbo-q5_0",
              displayName: "Large v3 Turbo (Quantized)",
              size: "547 MiB",
@@ -132,6 +122,29 @@ import Foundation
              ramUsage: 1.0,
              hash: "e050f7970618a659205450ad97eb95a18d69c9ee"
          ),
+         
+                 // Cloud Models
+        CloudModel(
+            name: "whisper-large-v3-turbo",
+            displayName: "Whisper Large v3 Turbo (Groq)",
+            description: "Groq's ultra-fast Whisper Large v3 Turbo model with lightning-speed inference",
+            provider: .groq,
+            speed: 0.65,
+            accuracy: 0.96,
+            isMultilingual: true,
+            supportedLanguages: getLanguageDictionary(isMultilingual: true, isLargeV3: true)
+        ),
+        CloudModel(
+           name: "scribe_v1",
+           displayName: "Scribe v1 (ElevenLabs)",
+           description: "ElevenLabs' Scribe model for fast and accurate transcription.",
+           provider: .elevenLabs,
+           speed: 0.75,
+           accuracy: 0.98,
+           isMultilingual: true,
+           supportedLanguages: getLanguageDictionary(isMultilingual: true, isLargeV3: true)
+       ),
+
      ]
  
      static let allLanguages = [

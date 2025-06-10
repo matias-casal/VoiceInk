@@ -388,7 +388,7 @@ struct AudioPlayerView: View {
     }
     
     private func retranscribeAudio() {
-        guard let currentModel = whisperState.currentModel else {
+        guard let currentTranscriptionModel = whisperState.currentTranscriptionModel else {
             errorMessage = "No transcription model selected"
             showRetranscribeError = true
             DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
@@ -401,7 +401,7 @@ struct AudioPlayerView: View {
         
         Task {
             do {
-                let _ = try await transcriptionService.retranscribeAudio(from: url, using: currentModel)
+                let _ = try await transcriptionService.retranscribeAudio(from: url, using: currentTranscriptionModel)
                 await MainActor.run {
                     isRetranscribing = false
                     showRetranscribeSuccess = true

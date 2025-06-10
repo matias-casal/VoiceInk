@@ -9,6 +9,7 @@ enum AIProvider: String, CaseIterable {
     case anthropic = "Anthropic"
     case mistral = "Mistral"
     case ollama = "Ollama"
+    case elevenLabs = "ElevenLabs"
     case custom = "Custom"
     
     var baseURL: String {
@@ -25,6 +26,8 @@ enum AIProvider: String, CaseIterable {
             return "https://api.anthropic.com/v1/messages"
         case .mistral:
             return "https://api.mistral.ai/v1/chat/completions"
+        case .elevenLabs:
+            return "https://api.elevenlabs.io/v1/speech-to-text"
         case .ollama:
             return UserDefaults.standard.string(forKey: "ollamaBaseURL") ?? "http://localhost:11434"
         case .custom:
@@ -46,6 +49,8 @@ enum AIProvider: String, CaseIterable {
             return "claude-3-5-sonnet-20241022"
         case .mistral:
             return "mistral-large-latest"
+        case .elevenLabs:
+            return "scribe_v1"
         case .ollama:
             return UserDefaults.standard.string(forKey: "ollamaSelectedModel") ?? "mistral"
         case .custom:
@@ -88,6 +93,8 @@ enum AIProvider: String, CaseIterable {
                 "mistral-small-latest",
                 "mistral-saba-latest"
             ]
+        case .elevenLabs:
+            return ["scribe_v1", "scribe_v1_experimental"]
         case .ollama:
             return []
         case .custom:
@@ -257,6 +264,8 @@ class AIService: ObservableObject {
             verifyGeminiAPIKey(key, completion: completion)
         case .anthropic:
             verifyAnthropicAPIKey(key, completion: completion)
+        case .elevenLabs:
+            verifyElevenLabsAPIKey(key, completion: completion)
         default:
             verifyOpenAICompatibleAPIKey(key, completion: completion)
         }
@@ -368,6 +377,30 @@ class AIService: ObservableObject {
             }
         }.resume()
     }
+    
+    private func verifyElevenLabsAPIKey(_ key: String, completion: @escaping (Bool) -> Void) {
+        let url = URL(string: "https://api.elevenlabs.io/v1/user")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.addValue(key, forHTTPHeaderField: "xi-api-key")
+        
+        URLSession.shared.dataTask(with: request) { _, response, error in
+            if let error = error {
+                self.logger.error("ElevenLabs API key verification failed: \(error.localizedDescription)")
+                completion(false)
+                return
+            }
+            
+            if let httpResponse = response as? HTTPURLResponse {
+                completion(httpResponse.statusCode == 200)
+            } else {
+                completion(false)
+            }
+        }.resume()
+    }
+    
+
     
     func clearAPIKey() {
         guard selectedProvider.requiresAPIKey else { return }

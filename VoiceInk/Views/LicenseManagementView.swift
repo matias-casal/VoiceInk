@@ -28,14 +28,7 @@ struct LicenseManagementView: View {
     private var heroSection: some View {
         VStack(spacing: 24) {
             // App Icon
-            if let appIcon = NSImage(named: "AppIcon") {
-                Image(nsImage: appIcon)
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(width: 96, height: 96)
-                    .cornerRadius(24)
-                    .shadow(color: .black.opacity(0.1), radius: 20, x: 0, y: 10)
-            }
+            AppIconView()
             
             // Title Section
             VStack(spacing: 16) {

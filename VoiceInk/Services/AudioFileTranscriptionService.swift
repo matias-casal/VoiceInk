@@ -10,11 +10,14 @@ class AudioTranscriptionService: ObservableObject {
     @Published var messageLog = ""
     @Published var currentError: TranscriptionError?
     
-    private var whisperContext: WhisperContext?
     private let modelContext: ModelContext
     private let enhancementService: AIEnhancementService?
     private let whisperState: WhisperState
     private let logger = Logger(subsystem: "com.bootweb.VoiceInk", category: "AudioTranscriptionService")
+    
+    // Transcription services
+    private let localTranscriptionService: LocalTranscriptionService
+    private let cloudTranscriptionService = CloudTranscriptionService()
     
     enum TranscriptionError: Error {
         case noAudioFile
@@ -27,82 +30,67 @@ class AudioTranscriptionService: ObservableObject {
         self.modelContext = modelContext
         self.whisperState = whisperState
         self.enhancementService = whisperState.enhancementService
+        self.localTranscriptionService = LocalTranscriptionService(modelsDirectory: whisperState.modelsDirectory, whisperState: whisperState)
     }
     
-    func retranscribeAudio(from url: URL, using whisperModel: WhisperModel) async throws -> Transcription {
+    func retranscribeAudio(from url: URL, using model: any TranscriptionModel) async throws -> Transcription {
         guard FileManager.default.fileExists(atPath: url.path) else {
             throw TranscriptionError.noAudioFile
         }
         
         await MainActor.run {
             isTranscribing = true
-            messageLog = "Loading model...\n"
+            messageLog = "Starting retranscription...\n"
         }
         
-        // Load the whisper model if needed
-        if whisperContext == nil {
-            do {
-                whisperContext = try await WhisperContext.createContext(path: whisperModel.url.path)
-                messageLog += "Model loaded successfully.\n"
-            } catch {
-                logger.error("❌ Failed to load model: \(error.localizedDescription)")
-                messageLog += "Failed to load model: \(error.localizedDescription)\n"
-                isTranscribing = false
-                throw TranscriptionError.modelNotLoaded
+        do {
+            // Delegate transcription to appropriate service
+            var text: String
+            
+            if model.provider == .local {
+                messageLog += "Using local transcription service...\n"
+                text = try await localTranscriptionService.transcribe(audioURL: url, model: model)
+                messageLog += "Local transcription completed.\n"
+            } else {
+                messageLog += "Using cloud transcription service...\n"
+                text = try await cloudTranscriptionService.transcribe(audioURL: url, model: model)
+                messageLog += "Cloud transcription completed.\n"
             }
-        }
-        
-        guard let whisperContext = whisperContext else {
-            isTranscribing = false
-            throw TranscriptionError.modelNotLoaded
-        }
-        
-        // Get audio duration
-        let audioAsset = AVURLAsset(url: url)
-        let duration = CMTimeGetSeconds(try await audioAsset.load(.duration))
-        
-        // Create a permanent copy of the audio file
-        let recordingsDirectory = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("com.bootweb.VoiceInk")
-            .appendingPathComponent("Recordings")
-        
-        let fileName = "retranscribed_\(UUID().uuidString).wav"
-        let permanentURL = recordingsDirectory.appendingPathComponent(fileName)
-        
-        do {
-            try FileManager.default.copyItem(at: url, to: permanentURL)
-        } catch {
-            logger.error("❌ Failed to create permanent copy of audio: \(error.localizedDescription)")
-            messageLog += "Failed to create permanent copy of audio: \(error.localizedDescription)\n"
-            isTranscribing = false
-            throw error
-        }
-        
-        let permanentURLString = permanentURL.absoluteString
-        
-        // Transcribe the audio
-        messageLog += "Transcribing audio...\n"
-        
-        do {
-            // Read audio samples
-            let samples = try readAudioSamples(permanentURL)
             
-            // Process with Whisper - using the same prompt as WhisperState
-            messageLog += "Setting prompt: \(whisperState.whisperPrompt.transcriptionPrompt)\n"
-            await whisperContext.setPrompt(whisperState.whisperPrompt.transcriptionPrompt)
-            
-            try await whisperContext.fullTranscribe(samples: samples)
-            var text = await whisperContext.getTranscription()
+            // Common post-processing for both local and cloud transcriptions
             text = text.trimmingCharacters(in: .whitespacesAndNewlines)
-            logger.notice("✅ Retranscription completed successfully, length: \(text.count) characters")
             
             // Apply word replacements if enabled
             if UserDefaults.standard.bool(forKey: "IsWordReplacementEnabled") {
                 text = WordReplacementService.shared.applyReplacements(to: text)
+                messageLog += "Word replacements applied.\n"
                 logger.notice("✅ Word replacements applied")
             }
             
-            // Apply AI enhancement if enabled - using the same enhancement service as WhisperState
+            // Get audio duration
+            let audioAsset = AVURLAsset(url: url)
+            let duration = CMTimeGetSeconds(try await audioAsset.load(.duration))
+            
+            // Create a permanent copy of the audio file
+            let recordingsDirectory = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+                .appendingPathComponent("com.bootweb.VoiceInk")
+                .appendingPathComponent("Recordings")
+            
+            let fileName = "retranscribed_\(UUID().uuidString).wav"
+            let permanentURL = recordingsDirectory.appendingPathComponent(fileName)
+            
+            do {
+                try FileManager.default.copyItem(at: url, to: permanentURL)
+            } catch {
+                logger.error("❌ Failed to create permanent copy of audio: \(error.localizedDescription)")
+                messageLog += "Failed to create permanent copy of audio: \(error.localizedDescription)\n"
+                isTranscribing = false
+                throw error
+            }
+            
+            let permanentURLString = permanentURL.absoluteString
+            
+            // Apply AI enhancement if enabled
             if let enhancementService = enhancementService,
                enhancementService.isEnhancementEnabled,
                enhancementService.isConfigured {
@@ -181,20 +169,5 @@ class AudioTranscriptionService: ObservableObject {
             isTranscribing = false
             throw error
         }
-    }
-    
-    private func readAudioSamples(_ url: URL) throws -> [Float] {
-        return try decodeWaveFile(url)
-    }
-    
-    private func decodeWaveFile(_ url: URL) throws -> [Float] {
-        let data = try Data(contentsOf: url)
-        let floats = stride(from: 44, to: data.count, by: 2).map {
-            return data[$0..<$0 + 2].withUnsafeBytes {
-                let short = Int16(littleEndian: $0.load(as: Int16.self))
-                return max(-1.0, min(Float(short) / 32767.0, 1.0))
-            }
-        }
-        return floats
     }
 }
