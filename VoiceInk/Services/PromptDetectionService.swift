@@ -105,12 +105,55 @@ class PromptDetectionService {
         return remainingText
     }
     
+    private func removeTrailingTriggerWord(from text: String, triggerWord: String) -> String? {
+        var trimmedText = text.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        let punctuationSet = CharacterSet(charactersIn: ",.!?;:")
+        while let scalar = trimmedText.unicodeScalars.last, punctuationSet.contains(scalar) {
+            trimmedText.removeLast()
+        }
+
+        let lowerText = trimmedText.lowercased()
+        let lowerTrigger = triggerWord.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard lowerText.hasSuffix(lowerTrigger) else { return nil }
+
+        let triggerStartIndex = trimmedText.index(trimmedText.endIndex, offsetBy: -triggerWord.count)
+        if triggerStartIndex > trimmedText.startIndex {
+            let charBeforeTrigger = trimmedText[trimmedText.index(before: triggerStartIndex)]
+            if charBeforeTrigger.isLetter || charBeforeTrigger.isNumber {
+                return nil
+            }
+        }
+
+        var remainingText = String(trimmedText[..<triggerStartIndex])
+
+        remainingText = remainingText.replacingOccurrences(
+            of: "[,\\.!\\?;:\\s]+$",
+            with: "",
+            options: .regularExpression
+        )
+        remainingText = remainingText.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        if !remainingText.isEmpty {
+            remainingText = remainingText.prefix(1).uppercased() + remainingText.dropFirst()
+        }
+
+        return remainingText
+    }
+    
     private func findMatchingTriggerWord(from text: String, triggerWords: [String]) -> (String, String)? {
         let trimmedWords = triggerWords.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty }
         
         // Sort by length (longest first) to match the most specific trigger word
         let sortedTriggerWords = trimmedWords.sorted { $0.count > $1.count }
+        
+        for triggerWord in sortedTriggerWords {
+            if let processedText = removeTrailingTriggerWord(from: text, triggerWord: triggerWord) {
+                return (triggerWord, processedText)
+            }
+        }
         
         for triggerWord in sortedTriggerWords {
             if let processedText = removeTriggerWord(from: text, triggerWord: triggerWord) {

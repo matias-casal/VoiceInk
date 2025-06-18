@@ -7,183 +7,162 @@ struct MetricsSetupView: View {
     @State private var isScreenRecordingEnabled = CGPreflightScreenCaptureAccess()
     
     var body: some View {
-        GeometryReader { geometry in
-            ScrollView {
-                VStack(spacing: geometry.size.height * 0.05) {
-                    // Header
-                    VStack(spacing: geometry.size.height * 0.02) {
-                        AppIconView()
+        ScrollView {
+            VStack(spacing: 24) {
+                // Header
+                VStack(spacing: 12) {
+                    AppIconView()
+                        .frame(width: 80, height: 80)
+                        .padding(.bottom, 20)
+                       
+                    VStack(spacing: 4) {
+                        Text("Welcome to VoiceInk")
+                            .font(.system(size: 28, weight: .bold, design: .rounded))
+                            .multilineTextAlignment(.center)
                         
-                        VStack(spacing: geometry.size.height * 0.01) {
-                            Text("Welcome to VoiceInk")
-                                .font(.system(size: min(32, geometry.size.width * 0.05), weight: .bold, design: .rounded))
-                                .multilineTextAlignment(.center)
-                            
-                            Text("Complete the setup to get started")
-                                .font(.system(size: min(16, geometry.size.width * 0.025)))
-                                .foregroundColor(.secondary)
-                                .multilineTextAlignment(.center)
+                        Text("Complete the setup to get started")
+                            .font(.system(size: 16))
+                            .foregroundColor(.secondary)
+                            .multilineTextAlignment(.center)
+                    }
+                }
+                .padding(.top, 20)
+                .padding(.bottom, 20)
+                
+                // Setup Steps
+                VStack(alignment: .leading, spacing: 0) {
+                    ForEach(0..<4) { index in
+                        setupStep(for: index)
+                        if index < 3 {
+                            Divider().padding(.leading, 70)
                         }
                     }
-                    .padding(.top, geometry.size.height * 0.03)
-                    
-                    // Setup Steps
-                    VStack(spacing: geometry.size.height * 0.02) {
-                        ForEach(0..<4) { index in
-                            setupStep(for: index, geometry: geometry)
-                        }
-                    }
-                    .padding(.horizontal, geometry.size.width * 0.03)
-                    
-                    Spacer(minLength: geometry.size.height * 0.02)
-                    
-                    // Action Button
-                    actionButton
-                        .frame(maxWidth: min(600, geometry.size.width * 0.8))
-                    
-                    // Help Text
-                    helpText
-                        .padding(.bottom, geometry.size.height * 0.03)
                 }
-                .padding(.horizontal, geometry.size.width * 0.05)
-                .frame(minHeight: geometry.size.height)
-                .background {
-                    Color(.controlBackgroundColor)
-                }
+                .background(Color(NSColor.textBackgroundColor))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+                )
+                .padding(.horizontal)
+                
+                Spacer(minLength: 20)
+                
+                // Action Button
+                actionButton
+                    .frame(maxWidth: 400)
+                
+                // Help Text
+                helpText
             }
+            .padding()
         }
-        .frame(minWidth: 500, minHeight: 400)
+        .frame(minWidth: 500, minHeight: 600)
+        .background(Color(NSColor.controlBackgroundColor))
     }
     
-    private func setupStep(for index: Int, geometry: GeometryProxy) -> some View {
-        let isCompleted: Bool
-        let icon: String
-        let title: String
-        let description: String
+    private func setupStep(for index: Int) -> some View {
+        let stepInfo: (isCompleted: Bool, icon: String, title: String, description: String)
         
         switch index {
         case 0:
-            isCompleted = KeyboardShortcuts.getShortcut(for: .toggleMiniRecorder) != nil
-            icon = "command"
-            title = "Set Keyboard Shortcut"
-            description = "Set up a keyboard shortcut to use VoiceInk anywhere"
+            stepInfo = (
+                isCompleted: KeyboardShortcuts.getShortcut(for: .toggleMiniRecorder) != nil,
+                icon: "command",
+                title: "Set Keyboard Shortcut",
+                description: "Use VoiceInk anywhere with a shortcut."
+            )
         case 1:
-            isCompleted = isAccessibilityEnabled
-            icon = "hand.raised"
-            title = "Enable Accessibility"
-            description = "Allow VoiceInk to paste transcribed text directly at your cursor position"
+            stepInfo = (
+                isCompleted: isAccessibilityEnabled,
+                icon: "hand.raised.fill",
+                title: "Enable Accessibility",
+                description: "Paste transcribed text at your cursor."
+            )
         case 2:
-            isCompleted = isScreenRecordingEnabled
-            icon = "video"
-            title = "Enable Screen Recording"
-            description = "Allow VoiceInk to understand context from your screen for transcript  Enhancement"
+            stepInfo = (
+                isCompleted: isScreenRecordingEnabled,
+                icon: "video.fill",
+                title: "Enable Screen Recording",
+                description: "Get better transcriptions with screen context."
+            )
         default:
-            isCompleted = whisperState.currentTranscriptionModel != nil
-            icon = "arrow.down"
-            title = "Download Model"
-            description = "Choose and download an AI model"
+            stepInfo = (
+                isCompleted: whisperState.currentTranscriptionModel != nil,
+                icon: "arrow.down.to.line",
+                title: "Download Model",
+                description: "Choose an AI model to start transcribing."
+            )
         }
         
-        return HStack(spacing: geometry.size.width * 0.03) {
-            // Status Icon
-            ZStack {
-                Circle()
-                    .fill(isCompleted ?
-                          Color(nsColor: .controlAccentColor).opacity(0.15) :
-                          Color(nsColor: .systemRed).opacity(0.15))
-                    .frame(width: min(44, geometry.size.width * 0.08), height: min(44, geometry.size.width * 0.08))
-                
-                Image(systemName: "\(icon).circle")
-                    .font(.system(size: min(24, geometry.size.width * 0.04), weight: .medium))
-                    .foregroundColor(isCompleted ? Color(nsColor: .controlAccentColor) : Color(nsColor: .systemRed))
-                    .symbolRenderingMode(.hierarchical)
-            }
+        return HStack(spacing: 16) {
+            Image(systemName: stepInfo.icon)
+                .font(.system(size: 18))
+                .frame(width: 40, height: 40)
+                .background((stepInfo.isCompleted ? Color.green : Color.accentColor).opacity(0.1))
+                .foregroundColor(stepInfo.isCompleted ? .green : Color.accentColor)
+                .clipShape(Circle())
             
-            // Text
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title)
-                    .font(.system(size: min(16, geometry.size.width * 0.025), weight: .semibold))
-                Text(description)
-                    .font(.system(size: min(14, geometry.size.width * 0.022)))
+            VStack(alignment: .leading, spacing: 3) {
+                Text(stepInfo.title)
+                    .font(.headline)
+                    .fontWeight(.semibold)
+                Text(stepInfo.description)
+                    .font(.subheadline)
                     .foregroundColor(.secondary)
             }
             
             Spacer()
             
-            // Status indicator
-            if isCompleted {
-                Image(systemName: "checkmark.seal.fill")
-                    .font(.system(size: min(26, geometry.size.width * 0.045), weight: .semibold))
-                    .foregroundColor(Color.green.opacity(0.95))
-                    .symbolRenderingMode(.hierarchical)
+            if stepInfo.isCompleted {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.system(size: 24))
+                    .foregroundColor(.green)
             } else {
-                Circle()
-                    .stroke(Color(nsColor: .systemRed), lineWidth: 2)
-                    .frame(width: min(24, geometry.size.width * 0.04), height: min(24, geometry.size.width * 0.04))
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundColor(Color(NSColor.separatorColor))
             }
         }
-        .padding(.horizontal, geometry.size.width * 0.03)
-        .padding(.vertical, geometry.size.height * 0.02)
-        .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(Color(.windowBackgroundColor))
-                .shadow(
-                    color: Color.black.opacity(0.05),
-                    radius: 8,
-                    x: 0,
-                    y: 4
-                )
-        )
+        .padding()
     }
     
     private var actionButton: some View {
-        Button(action: {
-            if isShortcutAndAccessibilityGranted {
-                openModelManagement()
-            } else {
-                // Handle different permission requests based on which one is missing
-                if KeyboardShortcuts.getShortcut(for: .toggleMiniRecorder) == nil {
-                    openSettings()
-                } else if !AXIsProcessTrusted() {
-                    if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
-                        NSWorkspace.shared.open(url)
-                    }
-                } else if !CGPreflightScreenCaptureAccess() {
-                    CGRequestScreenCaptureAccess()
-                    // After requesting, open system preferences as fallback
-                    if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture") {
-                        NSWorkspace.shared.open(url)
-                    }
-                }
-            }
-        }) {
-            HStack(spacing: 8) {
-                Text(isShortcutAndAccessibilityGranted ? "Download Model" : getActionButtonTitle())
+        Button(action: handleActionButton) {
+            HStack {
+                Text(getActionButtonTitle())
+                    .fontWeight(.semibold)
                 Image(systemName: "arrow.right")
-                    .font(.system(size: 14, weight: .semibold))
             }
-            .font(.headline)
             .frame(maxWidth: .infinity)
-            .frame(height: 50)
-            .background(
-                LinearGradient(
-                    colors: [
-                        Color(nsColor: .controlAccentColor),
-                        Color(nsColor: .controlAccentColor).opacity(0.8)
-                    ],
-                    startPoint: .leading,
-                    endPoint: .trailing
-                )
-            )
+            .padding(.vertical, 12)
+            .background(Color.accentColor)
             .foregroundColor(.white)
-            .clipShape(RoundedRectangle(cornerRadius: 14))
+            .cornerRadius(12)
         }
         .buttonStyle(.plain)
-        .shadow(
-            color: Color(nsColor: .controlAccentColor).opacity(0.3),
-            radius: 10,
-            y: 5
-        )
+        .shadow(color: Color.accentColor.opacity(0.3), radius: 8, y: 4)
+    }
+    
+    private func handleActionButton() {
+        if isShortcutAndAccessibilityGranted {
+            openModelManagement()
+        } else {
+            // Handle different permission requests based on which one is missing
+            if KeyboardShortcuts.getShortcut(for: .toggleMiniRecorder) == nil {
+                openSettings()
+            } else if !AXIsProcessTrusted() {
+                if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
+                    NSWorkspace.shared.open(url)
+                }
+            } else if !CGPreflightScreenCaptureAccess() {
+                CGRequestScreenCaptureAccess()
+                // After requesting, open system preferences as fallback
+                if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture") {
+                    NSWorkspace.shared.open(url)
+                }
+            }
+        }
     }
     
     private func getActionButtonTitle() -> String {
@@ -193,13 +172,15 @@ struct MetricsSetupView: View {
             return "Enable Accessibility"
         } else if !CGPreflightScreenCaptureAccess() {
             return "Enable Screen Recording"
+        } else if whisperState.currentTranscriptionModel == nil {
+            return "Download Model"
         }
-        return "Open Settings"
+        return "Get Started"
     }
     
     private var helpText: some View {
         Text("Need help? Check the Help menu for support options")
-            .font(.system(size: 13))
+            .font(.caption)
             .foregroundColor(.secondary)
     }
     

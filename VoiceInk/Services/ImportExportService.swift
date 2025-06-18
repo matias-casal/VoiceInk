@@ -28,6 +28,7 @@ struct VoiceInkExportedSettings: Codable {
     let wordReplacements: [String: String]?
     let generalSettings: GeneralSettings?
     let customEmojis: [String]?
+    let customCloudModels: [CustomCloudModel]?
 }
 
 class ImportExportService {
@@ -64,6 +65,9 @@ class ImportExportService {
 
         let powerConfigs = powerModeManager.configurations
         let defaultPowerConfig = powerModeManager.defaultConfig
+        
+        // Export custom models
+        let customModels = CustomModelManager.shared.customModels
 
         var exportedDictionaryItems: [DictionaryItem]? = nil
         if let data = UserDefaults.standard.data(forKey: dictionaryItemsKey),
@@ -96,7 +100,8 @@ class ImportExportService {
             dictionaryItems: exportedDictionaryItems,
             wordReplacements: exportedWordReplacements,
             generalSettings: generalSettingsToExport,
-            customEmojis: emojiManager.customEmojis
+            customEmojis: emojiManager.customEmojis,
+            customCloudModels: customModels
         )
 
         let encoder = JSONEncoder()
@@ -164,6 +169,17 @@ class ImportExportService {
                     powerModeManager.defaultConfig = importedSettings.defaultPowerModeConfig
                     powerModeManager.saveConfigurations()
                     powerModeManager.updateConfiguration(powerModeManager.defaultConfig)
+
+                    // Import Custom Models
+                    if let modelsToImport = importedSettings.customCloudModels {
+                        let customModelManager = CustomModelManager.shared
+                        customModelManager.customModels = modelsToImport
+                        customModelManager.saveCustomModels() // Ensure they are persisted
+                        whisperState.refreshAllAvailableModels() // Refresh the UI
+                        print("Successfully imported \(modelsToImport.count) custom models.")
+                    } else {
+                        print("No custom models found in the imported file.")
+                    }
 
                     if let customEmojis = importedSettings.customEmojis {
                         let emojiManager = EmojiManager.shared

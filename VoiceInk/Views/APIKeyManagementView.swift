@@ -44,7 +44,7 @@ struct APIKeyManagementView: View {
             
             // Provider Selection
             Picker("AI Provider", selection: $aiService.selectedProvider) {
-                ForEach(AIProvider.allCases.filter { $0 != .elevenLabs }, id: \.self) { provider in
+                ForEach(AIProvider.allCases.filter { $0 != .elevenLabs && $0 != .deepgram }, id: \.self) { provider in
                     Text(provider.rawValue).tag(provider)
                 }
             }
@@ -387,6 +387,8 @@ struct APIKeyManagementView: View {
                                             URL(string: "https://console.mistral.ai/api-keys")!
                                         case .elevenLabs:
                                             URL(string: "https://elevenlabs.io/speech-synthesis")!
+                                        case .deepgram:
+                                            URL(string: "https://console.deepgram.com/api-keys")!
                                         case .ollama, .custom:
                                             URL(string: "")! // This case should never be reached
                                         }

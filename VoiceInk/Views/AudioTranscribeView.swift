@@ -14,80 +14,85 @@ struct AudioTranscribeView: View {
     @State private var selectedPromptId: UUID?
     
     var body: some View {
-        VStack(spacing: 0) {
-            if transcriptionManager.isProcessing {
-                processingView
-            } else {
-                dropZoneView
-            }
+        ZStack {
+            Color(NSColor.controlBackgroundColor)
+                .ignoresSafeArea()
             
-            Divider()
-                .padding(.vertical)
-            
-            // Show current transcription result
-            if let transcription = transcriptionManager.currentTranscription {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 16) {
-                        Text("Transcription Result")
-                            .font(.headline)
-                        
-                        if let enhancedText = transcription.enhancedText {
-                            VStack(alignment: .leading, spacing: 8) {
-                                HStack {
-                                    Text("Enhanced")
-                                        .font(.subheadline)
-                                        .foregroundColor(.secondary)
-                                    Spacer()
-                                    HStack(spacing: 8) {
-                                        AnimatedCopyButton(textToCopy: enhancedText)
-                                        AnimatedSaveButton(textToSave: enhancedText)
+            VStack(spacing: 0) {
+                if transcriptionManager.isProcessing {
+                    processingView
+                } else {
+                    dropZoneView
+                }
+                
+                Divider()
+                    .padding(.vertical)
+                
+                // Show current transcription result
+                if let transcription = transcriptionManager.currentTranscription {
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 16) {
+                            Text("Transcription Result")
+                                .font(.headline)
+                            
+                            if let enhancedText = transcription.enhancedText {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    HStack {
+                                        Text("Enhanced")
+                                            .font(.subheadline)
+                                            .foregroundColor(.secondary)
+                                        Spacer()
+                                        HStack(spacing: 8) {
+                                            AnimatedCopyButton(textToCopy: enhancedText)
+                                            AnimatedSaveButton(textToSave: enhancedText)
+                                        }
                                     }
+                                    Text(enhancedText)
+                                        .textSelection(.enabled)
                                 }
-                                Text(enhancedText)
-                                    .textSelection(.enabled)
+                                
+                                Divider()
+                                
+                                VStack(alignment: .leading, spacing: 8) {
+                                    HStack {
+                                        Text("Original")
+                                            .font(.subheadline)
+                                            .foregroundColor(.secondary)
+                                        Spacer()
+                                        HStack(spacing: 8) {
+                                            AnimatedCopyButton(textToCopy: transcription.text)
+                                            AnimatedSaveButton(textToSave: transcription.text)
+                                        }
+                                    }
+                                    Text(transcription.text)
+                                        .textSelection(.enabled)
+                                }
+                            } else {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    HStack {
+                                        Text("Transcription")
+                                            .font(.subheadline)
+                                            .foregroundColor(.secondary)
+                                        Spacer()
+                                        HStack(spacing: 8) {
+                                            AnimatedCopyButton(textToCopy: transcription.text)
+                                            AnimatedSaveButton(textToSave: transcription.text)
+                                        }
+                                    }
+                                    Text(transcription.text)
+                                        .textSelection(.enabled)
+                                }
                             }
                             
-                            Divider()
-                            
-                            VStack(alignment: .leading, spacing: 8) {
-                                HStack {
-                                    Text("Original")
-                                        .font(.subheadline)
-                                        .foregroundColor(.secondary)
-                                    Spacer()
-                                    HStack(spacing: 8) {
-                                        AnimatedCopyButton(textToCopy: transcription.text)
-                                        AnimatedSaveButton(textToSave: transcription.text)
-                                    }
-                                }
-                                Text(transcription.text)
-                                    .textSelection(.enabled)
-                            }
-                        } else {
-                            VStack(alignment: .leading, spacing: 8) {
-                                HStack {
-                                    Text("Transcription")
-                                        .font(.subheadline)
-                                        .foregroundColor(.secondary)
-                                    Spacer()
-                                    HStack(spacing: 8) {
-                                        AnimatedCopyButton(textToCopy: transcription.text)
-                                        AnimatedSaveButton(textToSave: transcription.text)
-                                    }
-                                }
-                                Text(transcription.text)
-                                    .textSelection(.enabled)
+                            HStack {
+                                Text("Duration: \(formatDuration(transcription.duration))")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                Spacer()
                             }
                         }
-                        
-                        HStack {
-                            Text("Duration: \(formatDuration(transcription.duration))")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                            Spacer()
-                        }
+                        .padding()
                     }
-                    .padding()
                 }
             }
         }

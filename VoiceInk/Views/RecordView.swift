@@ -16,7 +16,7 @@ struct RecordView: View {
         ScrollView(showsIndicators: false) {
             mainContent
         }
-        .background(Color(.controlBackgroundColor).opacity(0.5))
+        .background(Color(NSColor.controlBackgroundColor))
     }
     
     private var mainContent: some View {

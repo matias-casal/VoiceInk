@@ -4,7 +4,7 @@ import AppKit
 class CursorPaster {
     private static let pasteCompletionDelay: TimeInterval = 0.3
     
-    static func pasteAtCursor(_ text: String) {
+    static func pasteAtCursor(_ text: String, shouldPreserveClipboard: Bool = true) {
         guard AXIsProcessTrusted() else {
             return
         }
@@ -12,12 +12,15 @@ class CursorPaster {
         let pasteboard = NSPasteboard.general
         
         var savedContents: [(NSPasteboard.PasteboardType, Data)] = []
-        let currentItems = pasteboard.pasteboardItems ?? []
         
-        for item in currentItems {
-            for type in item.types {
-                if let data = item.data(forType: type) {
-                    savedContents.append((type, data))
+        if shouldPreserveClipboard {
+            let currentItems = pasteboard.pasteboardItems ?? []
+            
+            for item in currentItems {
+                for type in item.types {
+                    if let data = item.data(forType: type) {
+                        savedContents.append((type, data))
+                    }
                 }
             }
         }
@@ -31,8 +34,8 @@ class CursorPaster {
             pasteUsingCommandV()
         }
         
-        DispatchQueue.global(qos: .userInitiated).asyncAfter(deadline: .now() + pasteCompletionDelay) {
-            if !savedContents.isEmpty {
+        if shouldPreserveClipboard && !savedContents.isEmpty {
+            DispatchQueue.global(qos: .userInitiated).asyncAfter(deadline: .now() + pasteCompletionDelay) {
                 pasteboard.clearContents()
                 for (type, data) in savedContents {
                     pasteboard.setData(data, forType: type)

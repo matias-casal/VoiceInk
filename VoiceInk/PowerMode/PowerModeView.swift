@@ -196,7 +196,7 @@ struct PowerModeView: View {
                         }
                         .background(
                             RoundedRectangle(cornerRadius: 16)
-                                .fill(Color(NSColor.controlBackgroundColor).opacity(0.9))
+                                .fill(Color(NSColor.controlBackgroundColor))
                         )
                         .overlay(
                             RoundedRectangle(cornerRadius: 16)
@@ -231,7 +231,7 @@ struct PowerModeView: View {
                         }
                         .frame(maxWidth: .infinity)
                         .padding(40)
-                        .background(Color(NSColor.controlBackgroundColor).opacity(0.9))
+                        .background(Color(NSColor.controlBackgroundColor))
                         .cornerRadius(16)
                         .shadow(color: Color(NSColor.shadowColor).opacity(0.05), radius: 5, y: 2)
                         .padding(.horizontal)
@@ -239,6 +239,7 @@ struct PowerModeView: View {
                 }
                 .padding(.bottom, 24)
             }
+            .background(Color(NSColor.controlBackgroundColor))
             .navigationTitle("")
             .navigationDestination(for: ConfigurationMode.self) { mode in
                 ConfigurationView(mode: mode, powerModeManager: powerModeManager)

@@ -86,8 +86,13 @@ class AudioDeviceManager: ObservableObject {
     }
     
     private func fallbackToDefaultDevice() {
-        selectInputMode(.systemDefault)
-        logger.info("Switched to system default audio input mode due to fallback.")
+        logger.info("Temporarily falling back to system default input device – user preference remains intact.")
+
+        if let currentID = selectedDeviceID, !isDeviceAvailable(currentID) {
+            selectedDeviceID = nil
+        }
+
+        notifyDeviceChange()
     }
     
     func loadAvailableDevices(completion: (() -> Void)? = nil) {
@@ -244,7 +249,11 @@ class AudioDeviceManager: ObservableObject {
         case .systemDefault:
             return fallbackDeviceID ?? 0
         case .custom:
-            return selectedDeviceID ?? fallbackDeviceID ?? 0
+            if let id = selectedDeviceID, isDeviceAvailable(id) {
+                return id
+            } else {
+                return fallbackDeviceID ?? 0
+            }
         case .prioritized:
             let sortedDevices = prioritizedDevices.sorted { $0.priority < $1.priority }
             for device in sortedDevices {

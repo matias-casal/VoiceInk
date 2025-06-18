@@ -487,7 +487,7 @@ struct ConfigurationView: View {
                                         .frame(maxWidth: .infinity, alignment: .leading)
                                 } else {
                                     Picker("", selection: providerBinding) {
-                                        ForEach(aiService.connectedProviders.filter { $0 != .elevenLabs }, id: \.self) { provider in
+                                        ForEach(aiService.connectedProviders.filter { $0 != .elevenLabs && $0 != .deepgram }, id: \.self) { provider in
                                             Text(provider.rawValue).tag(provider)
                                         }
                                     }

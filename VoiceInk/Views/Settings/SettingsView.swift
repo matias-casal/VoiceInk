@@ -259,6 +259,7 @@ struct SettingsView: View {
             .padding(.horizontal, 20)
             .padding(.vertical, 6)
         }
+        .background(Color(NSColor.controlBackgroundColor))
         .alert("Reset Onboarding", isPresented: $showResetOnboardingAlert) {
             Button("Cancel", role: .cancel) { }
             Button("Reset", role: .destructive) {
@@ -337,11 +338,7 @@ struct SettingsSection<Content: View>: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: 12)
-                .fill(Color(NSColor.windowBackgroundColor))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(Color(NSColor.controlBackgroundColor).opacity(0.5))
-                )
+                .fill(Color(.windowBackgroundColor).opacity(0.4))
         )
         .overlay(
             RoundedRectangle(cornerRadius: 12)

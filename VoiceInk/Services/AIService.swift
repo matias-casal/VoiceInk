@@ -10,6 +10,7 @@ enum AIProvider: String, CaseIterable {
     case mistral = "Mistral"
     case ollama = "Ollama"
     case elevenLabs = "ElevenLabs"
+    case deepgram = "Deepgram"
     case custom = "Custom"
     
     var baseURL: String {
@@ -30,6 +31,8 @@ enum AIProvider: String, CaseIterable {
             return "https://api.elevenlabs.io/v1/speech-to-text"
         case .ollama:
             return UserDefaults.standard.string(forKey: "ollamaBaseURL") ?? "http://localhost:11434"
+        case .deepgram:
+            return "https://api.deepgram.com/v1/listen"
         case .custom:
             return UserDefaults.standard.string(forKey: "customProviderBaseURL") ?? ""
         }
@@ -53,6 +56,8 @@ enum AIProvider: String, CaseIterable {
             return "scribe_v1"
         case .ollama:
             return UserDefaults.standard.string(forKey: "ollamaSelectedModel") ?? "mistral"
+        case .deepgram:
+            return "whisper-1"
         case .custom:
             return UserDefaults.standard.string(forKey: "customProviderModel") ?? ""
         }
@@ -97,6 +102,8 @@ enum AIProvider: String, CaseIterable {
             return ["scribe_v1", "scribe_v1_experimental"]
         case .ollama:
             return []
+        case .deepgram:
+            return ["whisper-1"]
         case .custom:
             return []
         }
@@ -266,6 +273,8 @@ class AIService: ObservableObject {
             verifyAnthropicAPIKey(key, completion: completion)
         case .elevenLabs:
             verifyElevenLabsAPIKey(key, completion: completion)
+        case .deepgram:
+            verifyDeepgramAPIKey(key, completion: completion)
         default:
             verifyOpenAICompatibleAPIKey(key, completion: completion)
         }
@@ -400,7 +409,26 @@ class AIService: ObservableObject {
         }.resume()
     }
     
-
+    private func verifyDeepgramAPIKey(_ key: String, completion: @escaping (Bool) -> Void) {
+        let url = URL(string: "https://api.deepgram.com/v1/auth/token")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.addValue("Token \(key)", forHTTPHeaderField: "Authorization")
+        
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            if let error = error {
+                self.logger.error("Deepgram API key verification failed: \(error.localizedDescription)")
+                completion(false)
+                return
+            }
+            
+            if let httpResponse = response as? HTTPURLResponse {
+                completion(httpResponse.statusCode == 200)
+            } else {
+                completion(false)
+            }
+        }.resume()
+    }
     
     func clearAPIKey() {
         guard selectedProvider.requiresAPIKey else { return }

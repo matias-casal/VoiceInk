@@ -275,6 +275,19 @@ struct AudioPlayerView: View {
                 )
                 
                 HStack(spacing: 20) {
+                    Button(action: showInFinder) {
+                        Circle()
+                            .fill(Color.orange.opacity(0.1))
+                            .frame(width: 44, height: 44)
+                            .overlay(
+                                Image(systemName: "folder")
+                                    .font(.system(size: 18, weight: .semibold))
+                                    .foregroundStyle(Color.orange)
+                            )
+                    }
+                    .buttonStyle(.plain)
+                    .help("Show in Finder")
+                    
                     Button(action: {
                         if playerManager.isPlaying {
                             playerManager.pause()
@@ -385,6 +398,10 @@ struct AudioPlayerView: View {
         let minutes = Int(time) / 60
         let seconds = Int(time) % 60
         return String(format: "%d:%02d", minutes, seconds)
+    }
+    
+    private func showInFinder() {
+        NSWorkspace.shared.selectFile(url.path, inFileViewerRootedAtPath: url.deletingLastPathComponent().path)
     }
     
     private func retranscribeAudio() {

@@ -5,6 +5,8 @@ enum ModelProvider: String, Codable, Hashable, CaseIterable {
     case local = "Local"
     case groq = "Groq"
     case elevenLabs = "ElevenLabs"
+    case deepgram = "Deepgram"
+    case custom = "Custom"
     // Future providers can be added here
 }
 
@@ -53,5 +55,31 @@ struct CloudModel: TranscriptionModel {
         self.accuracy = accuracy
         self.isMultilingualModel = isMultilingual
         self.supportedLanguages = supportedLanguages
+    }
+}
+
+// A new struct for custom cloud models
+struct CustomCloudModel: TranscriptionModel, Codable {
+    let id: UUID
+    let name: String
+    let displayName: String
+    let description: String
+    let provider: ModelProvider = .custom
+    let apiEndpoint: String
+    let apiKey: String
+    let modelName: String
+    let isMultilingualModel: Bool
+    let supportedLanguages: [String: String]
+
+    init(id: UUID = UUID(), name: String, displayName: String, description: String, apiEndpoint: String, apiKey: String, modelName: String, isMultilingual: Bool = true, supportedLanguages: [String: String]? = nil) {
+        self.id = id
+        self.name = name
+        self.displayName = displayName
+        self.description = description
+        self.apiEndpoint = apiEndpoint
+        self.apiKey = apiKey
+        self.modelName = modelName
+        self.isMultilingualModel = isMultilingual
+        self.supportedLanguages = supportedLanguages ?? PredefinedModels.getLanguageDictionary(isMultilingual: isMultilingual)
     }
 } 

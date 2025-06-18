@@ -150,7 +150,7 @@ struct OnboardingPermissionsView: View {
                                         Picker("Select Microphone", selection: Binding(
                                             get: { 
                                                 audioDeviceManager.selectedDeviceID ?? 
-                                                (audioDeviceManager.availableDevices.first?.id ?? 0)
+                                                audioDeviceManager.availableDevices.first?.id ?? 0
                                             },
                                             set: { newValue in
                                                 audioDeviceManager.selectDevice(id: newValue)
@@ -171,6 +171,24 @@ struct OnboardingPermissionsView: View {
                                         .padding(8)
                                         .background(Color.white.opacity(0.1))
                                         .cornerRadius(8)
+                                        .onAppear {
+                                            // Auto-select built-in microphone if no device is selected
+                                            if audioDeviceManager.selectedDeviceID == nil && !audioDeviceManager.availableDevices.isEmpty {
+                                                let builtInDevice = audioDeviceManager.availableDevices.first { device in
+                                                    device.name.lowercased().contains("built-in") || 
+                                                    device.name.lowercased().contains("internal")
+                                                }
+                                                let deviceToSelect = builtInDevice ?? audioDeviceManager.availableDevices.first
+                                                if let device = deviceToSelect {
+                                                    audioDeviceManager.selectDevice(id: device.id)
+                                                    audioDeviceManager.selectInputMode(.custom)
+                                                    withAnimation {
+                                                        permissionStates[currentPermissionIndex] = true
+                                                        showAnimation = true
+                                                    }
+                                                }
+                                            }
+                                        }
                                     }
                                     
                                     Text("For best results, using your Mac's built-in microphone is recommended.")
@@ -276,8 +294,8 @@ struct OnboardingPermissionsView: View {
         // Check microphone permission
         permissionStates[0] = AVCaptureDevice.authorizationStatus(for: .audio) == .authorized
         
-        // Check if device is selected
-        permissionStates[1] = audioDeviceManager.selectedDeviceID != nil
+        // Check if device is selected or system default mode is being used
+        permissionStates[1] = audioDeviceManager.selectedDeviceID != nil || audioDeviceManager.inputMode == .systemDefault
         
         // Check accessibility permission
         permissionStates[2] = AXIsProcessTrusted()
@@ -299,18 +317,21 @@ struct OnboardingPermissionsView: View {
         case .microphone:
             AVCaptureDevice.requestAccess(for: .audio) { granted in
                 DispatchQueue.main.async {
-                    permissionStates[currentPermissionIndex] = granted
+                    self.permissionStates[self.currentPermissionIndex] = granted
                     if granted {
                         withAnimation {
-                            showAnimation = true
+                            self.showAnimation = true
                         }
+                        self.audioDeviceManager.loadAvailableDevices()
                     }
                 }
             }
             
         case .audioDeviceSelection:
-            // If no device is selected, select the fallback device
+            audioDeviceManager.loadAvailableDevices()
+            
             if audioDeviceManager.availableDevices.isEmpty {
+                audioDeviceManager.selectInputMode(.systemDefault)
                 withAnimation {
                     permissionStates[currentPermissionIndex] = true
                     showAnimation = true
@@ -319,9 +340,17 @@ struct OnboardingPermissionsView: View {
                 return
             }
             
+            // If no device is selected yet, auto-select the built-in microphone or first available device
             if audioDeviceManager.selectedDeviceID == nil {
-                if let firstDevice = audioDeviceManager.availableDevices.first {
-                    audioDeviceManager.selectDevice(id: firstDevice.id)
+                let builtInDevice = audioDeviceManager.availableDevices.first { device in
+                    device.name.lowercased().contains("built-in") || 
+                    device.name.lowercased().contains("internal")
+                }
+                
+                let deviceToSelect = builtInDevice ?? audioDeviceManager.availableDevices.first
+                
+                if let device = deviceToSelect {
+                    audioDeviceManager.selectDevice(id: device.id)
                     audioDeviceManager.selectInputMode(.custom)
                     withAnimation {
                         permissionStates[currentPermissionIndex] = true
@@ -347,9 +376,13 @@ struct OnboardingPermissionsView: View {
             }
             
         case .screenRecording:
-            // Launch system preferences for screen recording
-            let prefpaneURL = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture")!
-            NSWorkspace.shared.open(prefpaneURL)
+            // First try to request permission programmatically
+            CGRequestScreenCaptureAccess()
+            
+            // Also open system preferences as fallback
+            if let prefpaneURL = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture") {
+                NSWorkspace.shared.open(prefpaneURL)
+            }
             
             // Start checking for permission status
             Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { timer in

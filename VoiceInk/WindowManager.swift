@@ -71,7 +71,7 @@ class WindowManager {
     func configureOnboardingPanel(_ window: NSWindow) {
         window.styleMask = [.borderless, .fullSizeContentView, .resizable]
         window.isMovableByWindowBackground = true
-        window.level = .floating
+        window.level = .normal
         window.titlebarAppearsTransparent = true
         window.titleVisibility = .hidden
         window.backgroundColor = .clear

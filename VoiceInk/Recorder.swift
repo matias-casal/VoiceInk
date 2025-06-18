@@ -62,6 +62,22 @@ class Recorder: ObservableObject {
     func startRecording(toOutputFile url: URL) async throws {
         deviceManager.isRecordingActive = true
         
+        let currentDeviceID = deviceManager.getCurrentDevice()
+        let lastDeviceID = UserDefaults.standard.string(forKey: "lastUsedMicrophoneDeviceID")
+        
+        if String(currentDeviceID) != lastDeviceID {
+            if let deviceName = deviceManager.availableDevices.first(where: { $0.id == currentDeviceID })?.name {
+                await MainActor.run {
+                    NotificationManager.shared.showNotification(
+                        title: "Audio Input Source",
+                        message: "Using: \(deviceName)",
+                        type: .info
+                    )
+                }
+            }
+        }
+        UserDefaults.standard.set(String(currentDeviceID), forKey: "lastUsedMicrophoneDeviceID")
+        
         Task { 
             await mediaController.muteSystemAudio()
         }
