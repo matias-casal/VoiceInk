@@ -8,7 +8,6 @@ struct MetricsView: View {
     @Query(sort: \Transcription.timestamp) private var transcriptions: [Transcription]
     @EnvironmentObject private var whisperState: WhisperState
     @EnvironmentObject private var hotkeyManager: HotkeyManager
-    @StateObject private var licenseViewModel = LicenseViewModel()
     @State private var hasLoadedData = false
     let skipSetupCheck: Bool
     

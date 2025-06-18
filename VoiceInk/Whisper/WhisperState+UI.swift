@@ -104,7 +104,7 @@ extension WhisperState {
     }
     
     @objc func handleLicenseStatusChanged() {
-        self.licenseViewModel = LicenseViewModel()
+        // No license validation needed - app is always Pro
     }
     
     @objc func handlePromptChange() {

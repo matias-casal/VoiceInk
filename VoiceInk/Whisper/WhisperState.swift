@@ -82,7 +82,7 @@ class WhisperState: NSObject, ObservableObject, AVAudioRecorderDelegate {
     let modelsDirectory: URL
     let recordingsDirectory: URL
     let enhancementService: AIEnhancementService?
-    var licenseViewModel: LicenseViewModel
+    // Removed license validation - app is always Pro
     let logger = Logger(subsystem: "com.bootweb.VoiceInk", category: "WhisperState")
     var notchWindowManager: NotchWindowManager?
     var miniWindowManager: MiniWindowManager?
@@ -102,7 +102,7 @@ class WhisperState: NSObject, ObservableObject, AVAudioRecorderDelegate {
         self.localTranscriptionService = LocalTranscriptionService(modelsDirectory: self.modelsDirectory)
         
         self.enhancementService = enhancementService
-        self.licenseViewModel = LicenseViewModel()
+        // No license validation needed - app is always Pro
         
         super.init()
         
@@ -258,12 +258,6 @@ class WhisperState: NSObject, ObservableObject, AVAudioRecorderDelegate {
     }
 
     private func transcribeAudio(_ url: URL) async {
-        // Check license status before proceeding
-        guard licenseViewModel.canUseApp else {
-            logger.warning("Transcription blocked: No valid license.")
-            return
-        }
-        
         if shouldCancelRecording {
             logger.info("🎤 Transcription and paste aborted at the beginning of transcribeAudio due to shouldCancelRecording flag.")
             await MainActor.run {
