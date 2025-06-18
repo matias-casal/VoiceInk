@@ -365,12 +365,8 @@ class WhisperState: NSObject, ObservableObject, AVAudioRecorderDelegate {
                 try? modelContext.save()
             }
             
-            if case .trialExpired = licenseViewModel.licenseState {
-                text = """
-                    Your trial has expired. Upgrade to VoiceInk Pro at tryvoiceink.com/buy
-                    \n\(text)
-                    """
-            }
+            // License system has been simplified - app is now Pro by default
+            // Removed trial expired check as the upstream no longer has trial restrictions
 
             text += " "
 
