@@ -1,26 +1,11 @@
 <?xml version="1.0" standalone="yes"?>
 <rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
     <channel>
-        <title>VoiceInk Releases</title>
-        <item>
-            <title>1.34</title>
-            <pubDate>Sat, 18 June 2025 12:20:00 +0545</pubDate>
-            <sparkle:version>134</sparkle:version>
-            <sparkle:shortVersionString>1.34</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[
-                    <h3>What's New in Version 1.34 🚀⚡</h3>
-                            <ul>
-                                <li>🚀 Added support for using custom AI models for transcription</li>
-                                <li>⭐ Added support for Deepgram Nova Model</li>
-                                <li>📂 Added show in Finder option in Transcript History</li>
-                                <li>✨ Improved Cloud Transcription Model UI</li>
-                                <li>🎯 Trigger Words detecting works both at the beginning as well as the end of transcript</li>
-                                <li>🛠️ Fixed Audio Input Persistence</li>
-                                <li>🔗 Fixed Paste operation conflicting with DeepL</li>
-                             </ul>
-            ]]></description>
-           <enclosure url="https://github.com/Beingpax/VoiceInk/releases/download/v1.34/VoiceInk.dmg" length="7543235" type="application/octet-stream" sparkle:edSignature="5KI6GHIIvR7KkdoECJ2UVDJuhgUD5IGhQ63j5zzISK1abgTVhLV+Z303E/tEx+7UMCJOT25gLJOjW0FwkRAqCw=="/>
-        </item>
+        <title>VoiceInk Custom Fork - Updates Disabled</title>
+        <!-- 
+        Updates are disabled for this custom fork.
+        This fork has been modified and does not receive updates from the original repository.
+        All license validation has been removed and the app runs as Pro version by default.
+        -->
     </channel>
 </rss>

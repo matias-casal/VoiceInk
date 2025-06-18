@@ -122,12 +122,13 @@ struct SettingsView: View {
                         Text("VoiceInk automatically checks for updates on launch and every other day.")
                             .settingsDescription()
                         
-                        Button("Check for Updates Now") {
-                            updaterViewModel.checkForUpdates()
-                        }
-                        .buttonStyle(.bordered)
-                        .controlSize(.large)
-                        .disabled(!updaterViewModel.canCheckForUpdates)
+                        // DISABLED: Update checking removed for custom fork
+                        // Button("Check for Updates Now") {
+                        //     updaterViewModel.checkForUpdates()
+                        // }
+                        // .buttonStyle(.bordered)
+                        // .controlSize(.large)
+                        // .disabled(!updaterViewModel.canCheckForUpdates)
                     }
                 }
                 

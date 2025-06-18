@@ -178,10 +178,11 @@ struct MenuBarView: View {
             
             Divider()
             
-            Button("Check for Updates") {
-                updaterViewModel.checkForUpdates()
-            }
-            .disabled(!updaterViewModel.canCheckForUpdates)
+            // DISABLED: Update checking removed for custom fork
+            // Button("Check for Updates") {
+            //     updaterViewModel.checkForUpdates()
+            // }
+            // .disabled(!updaterViewModel.canCheckForUpdates)
             
             Button("Help and Support") {
                 EmailSupport.openSupportEmail()

@@ -253,7 +253,26 @@ struct ContentView: View {
             SettingsView()
                 .environmentObject(whisperState)
         case .license:
-            LicenseManagementView()
+            // App is always Pro - no license management needed
+            VStack(spacing: 24) {
+                Image(systemName: "checkmark.seal.fill")
+                    .font(.system(size: 64))
+                    .foregroundColor(.green)
+                
+                VStack(spacing: 8) {
+                    Text("VoiceInk Pro")
+                        .font(.largeTitle)
+                        .fontWeight(.bold)
+                    
+                    Text("Full version - All features unlocked")
+                        .font(.title2)
+                        .foregroundColor(.secondary)
+                }
+                
+                Spacer()
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Color(NSColor.controlBackgroundColor))
         case .permissions:
             PermissionsView()
         }

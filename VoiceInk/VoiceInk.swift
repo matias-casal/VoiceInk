@@ -94,7 +94,7 @@ struct VoiceInkApp: App {
                     .environmentObject(enhancementService)
                     .modelContainer(container)
                     .onAppear {
-                        updaterViewModel.silentlyCheckForUpdates()
+                        // DISABLED: updaterViewModel.silentlyCheckForUpdates() - Custom fork doesn't need updates
                         
                         // Start the automatic audio cleanup process
                         audioCleanupManager.startAutomaticCleanup(modelContext: container.mainContext)
@@ -173,22 +173,24 @@ class UpdaterViewModel: NSObject, ObservableObject, SPUUpdaterDelegate {
         // Ahora podemos usar self de forma segura
         updaterController = SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: self, userDriverDelegate: nil)
         
-        // Enable automatic update checking
-        updaterController.updater.automaticallyChecksForUpdates = true
-        updaterController.updater.updateCheckInterval = 24 * 60 * 60
+        // DISABLE automatic update checking - app uses custom fork
+        updaterController.updater.automaticallyChecksForUpdates = false
+        updaterController.updater.updateCheckInterval = 0
         
         updaterController.updater.publisher(for: \.canCheckForUpdates)
             .assign(to: &$canCheckForUpdates)
     }
     
     func checkForUpdates() {
-        // This is for manual checks - will show UI
-        updaterController.checkForUpdates(nil)
+        // DISABLED: Manual update checking disabled for custom fork
+        // updaterController.checkForUpdates(nil)
+        print("INFO: Manual update checking disabled - running custom fork")
     }
     
     func silentlyCheckForUpdates() {
-        // This checks for updates in the background without showing UI unless an update is found
-        updaterController.updater.checkForUpdatesInBackground()
+        // DISABLED: Update checking disabled for custom fork
+        // updaterController.updater.checkForUpdatesInBackground()
+        print("INFO: Update checking disabled - running custom fork")
     }
     
     // MARK: - SPUUpdaterDelegate
